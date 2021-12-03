@@ -1,4 +1,5 @@
 use std::io::{stdin, BufRead};
+use std::time::Instant;
 
 fn main() {
     let nums: Vec<Vec<char>> = stdin()
@@ -7,8 +8,15 @@ fn main() {
         .map(|s| s.unwrap().chars().collect())
         .collect();
 
-    println!("{}", part_one(&nums));
-    println!("{}", part_two(&nums));
+    let s = Instant::now();
+    let a = part_one(&nums);
+    let ea = s.elapsed();
+    println!("{} in {:?}", a, ea);
+    let s = Instant::now();
+    let b = part_two(&nums);
+    let eb = s.elapsed();
+    println!("{} in {:?}", b, eb);
+    println!("{:?}", ea + eb);
 }
 
 fn most_frequent_bit(n: usize, nums: &[Vec<char>]) -> char {
