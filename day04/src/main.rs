@@ -1,3 +1,4 @@
+use std::cell::RefCell;
 use std::collections::HashMap;
 use std::io::{stdin, BufRead};
 use std::time::Instant;
@@ -32,26 +33,30 @@ impl Board {
     fn mark(&mut self, v: u32) -> Option<u32> {
         if let Some((i, j)) = self.inv.get(&(v as u8)) {
             self.sum -= v;
-            self.cols[*j as usize] += 1;
-            self.rows[*i as usize] += 1;
-            if self.cols[*j as usize] == LEN || self.rows[*i as usize] == LEN {
+            if self.cols[*j as usize] == LEN - 1 {
                 return Some(self.sum);
             }
+            self.cols[*j as usize] += 1;
+            if self.rows[*i as usize] == LEN - 1 {
+                return Some(self.sum);
+            }
+            self.rows[*i as usize] += 1;
         }
         None
     }
 }
 
-fn parse_board(b: Vec<String>) -> Board {
+fn parse_board(b: Vec<String>) -> RefCell<Board> {
     Board::new(
         b.into_iter()
             .map(|r| r.split(' ').flat_map(|v| v.parse().ok()).collect())
             .collect(),
     )
+    .into()
 }
 
 fn main() {
-    let input: Vec<String> = stdin().lock().lines().map(|s| s.unwrap()).collect();
+    let input: Vec<_> = stdin().lock().lines().map(|s| s.unwrap()).collect();
     let nums: Vec<u32> = input[0].split(',').map(|v| v.parse().unwrap()).collect();
     let mut boards: Vec<_> = input[2..]
         .split(|s| s.is_empty())
@@ -60,22 +65,18 @@ fn main() {
         .collect();
     let s = Instant::now();
     let mut wins = vec![];
-    for n in nums {
-        let mut new_board: Vec<Board> = vec![];
-        for mut b in boards {
-            if let Some(sum) = b.mark(n) {
-                wins.push(sum * n)
+    nums.into_iter().for_each(|n| {
+        boards.retain(|b| {
+            if let Some(sum) = b.borrow_mut().mark(n) {
+                wins.push(sum * n);
+                false
             } else {
-                new_board.push(b);
+                true
             }
-        }
-        if new_board.is_empty() {
-            break;
-        }
-        boards = new_board;
-    }
+        })
+    });
     let elapsed = s.elapsed();
     println!("{:?}", wins.first());
     println!("{:?}", wins.last());
-    println!("elapsed {:?}", elapsed);
+    println!("total computation time {:?}", elapsed);
 }
