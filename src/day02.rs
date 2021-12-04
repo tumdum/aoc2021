@@ -1,5 +1,6 @@
-use std::io::{stdin, BufRead};
+use std::io::BufRead;
 use std::str::FromStr;
+use std::time::{Duration, Instant};
 
 #[derive(Debug, Clone, Copy)]
 enum Dir {
@@ -66,14 +67,20 @@ impl Pos {
     }
 }
 
-fn main() {
-    let moves: Vec<Dir> = stdin()
-        .lock()
-        .lines()
-        .map(|s| s.unwrap().parse().unwrap())
-        .collect();
+pub fn solve(input: &mut dyn BufRead, verify_expected: bool) -> Duration {
+    let moves: Vec<Dir> = input.lines().map(|s| s.unwrap().parse().unwrap()).collect();
+
+    let s = Instant::now();
     let pos = moves.iter().fold(Pos::default(), |p, m| p.apply_move(*m));
-    println!("{}", pos.h * pos.d);
+    let part1 = pos.h * pos.d;
     let pos = moves.iter().fold(Pos::default(), |p, m| p.apply_move2(*m));
-    println!("{}", pos.h * pos.d);
+    let part2 = pos.h * pos.d;
+    let e = s.elapsed();
+    if verify_expected {
+        assert_eq!(1698735, part1);
+        assert_eq!(1594785890, part2);
+    }
+    println!("\t{}", part1);
+    println!("\t{}", part2);
+    e
 }

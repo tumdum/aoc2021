@@ -1,10 +1,9 @@
 use smallvec::SmallVec;
-use std::io::{stdin, BufRead};
-use std::time::Instant;
+use std::io::BufRead;
+use std::time::{Duration, Instant};
 
-fn main() {
-    let nums: Vec<SmallVec<[u8; 12]>> = stdin()
-        .lock()
+pub fn solve(input: &mut dyn BufRead, verify_expected: bool) -> Duration {
+    let nums: Vec<SmallVec<[u8; 12]>> = input
         .lines()
         .map(|s| {
             s.unwrap()
@@ -15,14 +14,16 @@ fn main() {
         .collect();
 
     let s = Instant::now();
-    let a = part_one(&nums);
-    let ea = s.elapsed();
-    println!("{} in {:?}", a, ea);
-    let s = Instant::now();
-    let b = part_two(&nums);
-    let eb = s.elapsed();
-    println!("{} in {:?}", b, eb);
-    println!("{:?}", ea + eb);
+    let part1 = part_one(&nums);
+    let part2 = part_two(&nums);
+    let e = s.elapsed();
+    if verify_expected {
+        assert_eq!(2954600, part1);
+        assert_eq!(1662846, part2);
+    }
+    println!("\t{}", part1);
+    println!("\t{}", part2);
+    e
 }
 
 fn most_frequent_bit(n: usize, nums: &[SmallVec<[u8; 12]>]) -> u8 {

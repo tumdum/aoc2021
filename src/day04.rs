@@ -1,7 +1,7 @@
 use std::cell::RefCell;
 use std::collections::HashMap;
-use std::io::{stdin, BufRead};
-use std::time::Instant;
+use std::io::BufRead;
+use std::time::{Duration, Instant};
 
 const LEN: u8 = 5;
 
@@ -55,8 +55,8 @@ fn parse_board(b: Vec<String>) -> RefCell<Board> {
     .into()
 }
 
-fn main() {
-    let input: Vec<_> = stdin().lock().lines().map(|s| s.unwrap()).collect();
+pub fn solve(input: &mut dyn BufRead, verify_expected: bool) -> Duration {
+    let input: Vec<_> = input.lines().map(|s| s.unwrap()).collect();
     let nums: Vec<u32> = input[0].split(',').map(|v| v.parse().unwrap()).collect();
     let mut boards: Vec<_> = input[2..]
         .split(|s| s.is_empty())
@@ -75,8 +75,14 @@ fn main() {
             }
         })
     });
+    let part1 = *wins.first().unwrap();
+    let part2 = *wins.last().unwrap();
     let elapsed = s.elapsed();
-    println!("{:?}", wins.first());
-    println!("{:?}", wins.last());
-    println!("total computation time {:?}", elapsed);
+    if verify_expected {
+        assert_eq!(49686, part1);
+        assert_eq!(26878, part2);
+    }
+    println!("\t{}", part1);
+    println!("\t{}", part2);
+    elapsed
 }
