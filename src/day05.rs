@@ -78,14 +78,14 @@ impl FromStr for Line {
     }
 }
 
-fn count_overlaps(lines: Vec<Line>, mut count: usize, map: &mut [Vec<u8>]) -> usize {
+fn count_overlaps(lines: Vec<Line>, mut count: usize, w: i64, map: &mut [u8]) -> usize {
     for l in lines {
         let dif = l.end - l.start;
         let len = dif.len() + 1;
         let dif = dif.normalize();
         let mut cur = l.start;
         for _ in 0..len {
-            let v = &mut map[cur.x as usize][cur.y as usize];
+            let v = &mut map[(cur.y * w + cur.x) as usize];
             match v {
                 0 => *v = 1,
                 1 => {
@@ -130,11 +130,10 @@ pub fn solve(input: &mut dyn BufRead, verify_expected: bool, output: bool) -> Du
     });
     let straight = lines;
 
-    let row = vec![0u8; max_y as usize];
-    let mut map = vec![row; max_x as usize];
+    let mut map = vec![0; (max_x * max_y) as usize];
 
-    let part1 = count_overlaps(straight, 0, &mut map);
-    let part2 = count_overlaps(diagonals, part1, &mut map);
+    let part1 = count_overlaps(straight, 0, max_x as i64, &mut map);
+    let part2 = count_overlaps(diagonals, part1, max_x as i64, &mut map);
     let e = s.elapsed();
     if verify_expected {
         assert_eq!(5632, part1);
