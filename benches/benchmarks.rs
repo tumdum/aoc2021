@@ -1,41 +1,27 @@
-use criterion::{black_box, criterion_group, criterion_main, Criterion};
-use std::fs::File;
-use std::io::{BufRead, BufReader};
+use criterion::{criterion_group, criterion_main, Criterion};
+use std::io::BufReader;
 
-fn day01(c: &mut Criterion) {
-    let input = include_bytes!("../inputs/day01");
-    c.bench_function("day 01", |b| {
-        b.iter(|| aoc21::day01::solve(&mut BufReader::new(&input[..]), false, false))
-    });
+macro_rules! benchmark {
+    ($name: ident) => {
+        fn $name(c: &mut Criterion) {
+            let input = std::fs::read(format!(
+                "{}/inputs/{}",
+                env!("CARGO_MANIFEST_DIR"),
+                stringify!($name)
+            ))
+            .unwrap();
+            c.bench_function(stringify!($name), |b| {
+                b.iter(|| aoc21::$name::solve(&mut BufReader::new(&input[..]), false, false))
+            });
+        }
+    };
 }
 
-fn day02(c: &mut Criterion) {
-    let input = include_bytes!("../inputs/day02");
-    c.bench_function("day 02", |b| {
-        b.iter(|| aoc21::day02::solve(&mut BufReader::new(&input[..]), false, false))
-    });
-}
-
-fn day03(c: &mut Criterion) {
-    let input = include_bytes!("../inputs/day03");
-    c.bench_function("day 03", |b| {
-        b.iter(|| aoc21::day03::solve(&mut BufReader::new(&input[..]), false, false))
-    });
-}
-
-fn day04(c: &mut Criterion) {
-    let input = include_bytes!("../inputs/day04");
-    c.bench_function("day 04", |b| {
-        b.iter(|| aoc21::day04::solve(&mut BufReader::new(&input[..]), false, false))
-    });
-}
-
-fn day05(c: &mut Criterion) {
-    let input = include_bytes!("../inputs/day05");
-    c.bench_function("day 05", |b| {
-        b.iter(|| aoc21::day05::solve(&mut BufReader::new(&input[..]), false, false))
-    });
-}
+benchmark! {day01}
+benchmark! {day02}
+benchmark! {day03}
+benchmark! {day04}
+benchmark! {day05}
 
 criterion_group!(benches, day01, day02, day03, day04, day05);
 criterion_main!(benches);
