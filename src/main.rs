@@ -1,6 +1,7 @@
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 use std::path::PathBuf;
+use std::time::Instant;
 use std::time::Duration;
 use structopt::StructOpt;
 
@@ -41,8 +42,10 @@ fn main() {
                 None => BufReader::new(File::open(format!("inputs/day{:02}", i + 1)).unwrap()),
                 Some(path) => BufReader::new(File::open(path).unwrap()),
             };
+            let start = Instant::now();
             let t = solution(&mut input, !opt.skip_verification);
-            println!("Day {:02} took {:?} to compute", i + 1, t);
+            let solution_with_io = start.elapsed();
+            println!("Day {:02} took {:?} to compute (with i/o: {:?})", i + 1, t, solution_with_io);
             total += t;
         }
     }
