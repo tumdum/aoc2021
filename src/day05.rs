@@ -78,20 +78,7 @@ impl FromStr for Line {
     }
 }
 
-fn count_overlaps(
-    lines: Vec<Line>,
-    start_count: usize,
-    map: &mut [Vec<u8>],
-    is_straight: bool,
-) -> usize {
-    let lines: Vec<_> = lines
-        .iter()
-        .filter(|l| is_straight == l.is_straight())
-        .cloned()
-        .collect();
-
-    let mut count = start_count;
-
+fn count_overlaps(lines: Vec<Line>, mut count: usize, map: &mut [Vec<u8>]) -> usize {
     for l in lines {
         let dif = l.end - l.start;
         let len = dif.len() + 1;
@@ -114,7 +101,7 @@ fn count_overlaps(
     count
 }
 pub fn solve(input: &mut dyn BufRead, verify_expected: bool) -> Duration {
-    let lines: Vec<Line> = input.lines().map(|s| s.unwrap().parse().unwrap()).collect();
+    let mut lines: Vec<Line> = input.lines().map(|s| s.unwrap().parse().unwrap()).collect();
     let s = Instant::now();
     let max_x = (lines
         .iter()
@@ -131,11 +118,22 @@ pub fn solve(input: &mut dyn BufRead, verify_expected: bool) -> Duration {
         .unwrap()
         + 1) as usize;
 
+    let mut diagonals = vec![];
+    lines.retain(|l| {
+        if l.is_straight() {
+            true
+        } else {
+            diagonals.push(*l);
+            false
+        }
+    });
+    let straight = lines;
+
     let row = vec![0u8; max_y as usize];
     let mut map = vec![row; max_x as usize];
 
-    let part1 = count_overlaps(lines.clone(), 0, &mut map, true);
-    let part2 = count_overlaps(lines, part1, &mut map, false);
+    let part1 = count_overlaps(straight, 0, &mut map);
+    let part2 = count_overlaps(diagonals, part1, &mut map);
     let e = s.elapsed();
     if verify_expected {
         assert_eq!(5632, part1);
