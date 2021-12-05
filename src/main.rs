@@ -5,12 +5,6 @@ use std::time::Duration;
 use std::time::Instant;
 use structopt::StructOpt;
 
-mod day01;
-mod day02;
-mod day03;
-mod day04;
-mod day05;
-
 #[derive(StructOpt, Debug)]
 #[structopt(author)]
 struct Opt {
@@ -31,12 +25,12 @@ fn d2s(d: Duration) -> String {
 fn main() {
     let opt = Opt::from_args();
 
-    let solutions: Vec<&dyn Fn(&mut dyn BufRead, bool) -> Duration> = vec![
-        &day01::solve,
-        &day02::solve,
-        &day03::solve,
-        &day04::solve,
-        &day05::solve,
+    let solutions: Vec<&dyn Fn(&mut dyn BufRead, bool, bool) -> Duration> = vec![
+        &aoc21::day01::solve,
+        &aoc21::day02::solve,
+        &aoc21::day03::solve,
+        &aoc21::day04::solve,
+        &aoc21::day05::solve,
     ];
 
     let mut total = Duration::from_secs(0);
@@ -48,7 +42,7 @@ fn main() {
                 Some(path) => BufReader::new(File::open(path).unwrap()),
             };
             let start = Instant::now();
-            let t = solution(&mut input, !opt.skip_verification);
+            let t = solution(&mut input, !opt.skip_verification, true);
             let solution_with_io = start.elapsed();
             println!(
                 "Day {:02} took {:>10} to compute (with i/o: {:>10})",

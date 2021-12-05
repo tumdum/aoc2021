@@ -67,7 +67,7 @@ impl Pos {
     }
 }
 
-pub fn solve(input: &mut dyn BufRead, verify_expected: bool) -> Duration {
+pub fn solve(input: &mut dyn BufRead, verify_expected: bool, output: bool) -> Duration {
     let moves: Vec<Dir> = input.lines().map(|s| s.unwrap().parse().unwrap()).collect();
 
     let s = Instant::now();
@@ -80,7 +80,9 @@ pub fn solve(input: &mut dyn BufRead, verify_expected: bool) -> Duration {
         assert_eq!(1698735, part1);
         assert_eq!(1594785890, part2);
     }
-    println!("\t{}", part1);
-    println!("\t{}", part2);
+    if output {
+        println!("\t{}", part1);
+        println!("\t{}", part2);
+    }
     e
 }

@@ -55,7 +55,7 @@ fn parse_board(b: Vec<String>) -> RefCell<Board> {
     .into()
 }
 
-pub fn solve(input: &mut dyn BufRead, verify_expected: bool) -> Duration {
+pub fn solve(input: &mut dyn BufRead, verify_expected: bool, output: bool) -> Duration {
     let input: Vec<_> = input.lines().map(|s| s.unwrap()).collect();
     let nums: Vec<u32> = input[0].split(',').map(|v| v.parse().unwrap()).collect();
     let mut boards: Vec<_> = input[2..]
@@ -82,7 +82,9 @@ pub fn solve(input: &mut dyn BufRead, verify_expected: bool) -> Duration {
         assert_eq!(49686, part1);
         assert_eq!(26878, part2);
     }
-    println!("\t{}", part1);
-    println!("\t{}", part2);
+    if output {
+        println!("\t{}", part1);
+        println!("\t{}", part2);
+    }
     elapsed
 }

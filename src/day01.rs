@@ -1,6 +1,6 @@
 use std::io::BufRead;
 use std::time::{Duration, Instant};
-pub fn solve(input: &mut dyn BufRead, verify_expected: bool) -> Duration {
+pub fn solve(input: &mut dyn BufRead, verify_expected: bool, output: bool) -> Duration {
     let input: Vec<i64> = input.lines().map(|s| s.unwrap().parse().unwrap()).collect();
 
     let s = Instant::now();
@@ -12,7 +12,9 @@ pub fn solve(input: &mut dyn BufRead, verify_expected: bool) -> Duration {
         assert_eq!(1602, part1);
         assert_eq!(1633, part2);
     }
-    println!("\t{}", part1);
-    println!("\t{}", part2);
+    if output {
+        println!("\t{}", part1);
+        println!("\t{}", part2);
+    }
     e
 }

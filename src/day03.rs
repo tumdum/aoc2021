@@ -2,7 +2,7 @@ use smallvec::SmallVec;
 use std::io::BufRead;
 use std::time::{Duration, Instant};
 
-pub fn solve(input: &mut dyn BufRead, verify_expected: bool) -> Duration {
+pub fn solve(input: &mut dyn BufRead, verify_expected: bool, output: bool) -> Duration {
     let nums: Vec<SmallVec<[u8; 12]>> = input
         .lines()
         .map(|s| {
@@ -21,8 +21,10 @@ pub fn solve(input: &mut dyn BufRead, verify_expected: bool) -> Duration {
         assert_eq!(2954600, part1);
         assert_eq!(1662846, part2);
     }
-    println!("\t{}", part1);
-    println!("\t{}", part2);
+    if output {
+        println!("\t{}", part1);
+        println!("\t{}", part2);
+    }
     e
 }
 

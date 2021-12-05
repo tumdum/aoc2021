@@ -56,7 +56,7 @@ impl Sub<Point> for Point {
 }
 
 #[derive(Debug, Clone, Copy)]
-struct Line {
+pub struct Line {
     start: Point,
     end: Point,
 }
@@ -100,7 +100,8 @@ fn count_overlaps(lines: Vec<Line>, mut count: usize, map: &mut [Vec<u8>]) -> us
 
     count
 }
-pub fn solve(input: &mut dyn BufRead, verify_expected: bool) -> Duration {
+
+pub fn solve(input: &mut dyn BufRead, verify_expected: bool, output: bool) -> Duration {
     let mut lines: Vec<Line> = input.lines().map(|s| s.unwrap().parse().unwrap()).collect();
     let s = Instant::now();
     let max_x = (lines
@@ -139,7 +140,9 @@ pub fn solve(input: &mut dyn BufRead, verify_expected: bool) -> Duration {
         assert_eq!(5632, part1);
         assert_eq!(22213, part2);
     }
-    println!("\t{}", part1);
-    println!("\t{}", part2);
+    if output {
+        println!("\t{}", part1);
+        println!("\t{}", part2);
+    }
     e
 }
