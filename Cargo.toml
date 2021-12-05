@@ -7,3 +7,6 @@ edition = "2021"
 
 [dependencies]
 smallvec="1"
+
+[profile.release]
+debug=true
