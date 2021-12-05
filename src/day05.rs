@@ -13,16 +13,8 @@ struct Point {
 impl Point {
     fn normalize(&self) -> Self {
         Self {
-            x: if self.x != 0 {
-                self.x / self.x.abs()
-            } else {
-                0
-            },
-            y: if self.y != 0 {
-                self.y / self.y.abs()
-            } else {
-                0
-            },
+            x: self.x.signum(),
+            y: self.y.signum(),
         }
     }
 
