@@ -17,11 +17,15 @@ macro_rules! benchmark {
     };
 }
 
-benchmark! {day01}
-benchmark! {day02}
-benchmark! {day03}
-benchmark! {day04}
-benchmark! {day05}
+macro_rules! benchmarks {
+    ($($name:ident),+) => {
+        $(
+            benchmark!{$name}
+        )+
 
-criterion_group!(benches, day01, day02, day03, day04, day05);
-criterion_main!(benches);
+        criterion_group!(benches, $($name,)+);
+        criterion_main!(benches);
+    }
+}
+
+benchmarks! {day01,day02,day03,day04,day05}
