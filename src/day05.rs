@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::error::Error;
 use std::io::BufRead;
 use std::ops::{AddAssign, Sub};
@@ -6,8 +7,8 @@ use std::time::{Duration, Instant};
 
 #[derive(Debug, Clone, Copy, PartialOrd, Ord, PartialEq, Eq, Hash)]
 struct Point {
-    x: i64,
-    y: i64,
+    x: i32,
+    y: i32,
 }
 
 impl Point {
@@ -18,7 +19,7 @@ impl Point {
         }
     }
 
-    fn len(&self) -> i64 {
+    fn len(&self) -> i32 {
         if self.x != 0 {
             self.x.abs()
         } else {
@@ -78,13 +79,19 @@ impl FromStr for Line {
     }
 }
 
-fn count_overlaps(lines: Vec<Line>, mut count: usize, w: i64, map: &mut [u8]) -> usize {
+fn count_overlaps(lines: Vec<Line>, mut count: usize, w: i64, map: &mut HashMap<Point, u8>) -> usize {
+    let mut cl = 0;
     for l in lines {
+        cl += 1;
+        if cl % 1000 == 0 {
+            println!("lines: {}", cl);
+        }
         let dif = l.end - l.start;
         let len = dif.len() + 1;
         let dif = dif.normalize();
         let mut cur = l.start;
         for _ in 0..len {
+            /*
             let v = &mut map[(cur.y * w + cur.x) as usize];
             match v {
                 0 => *v = 1,
@@ -94,7 +101,17 @@ fn count_overlaps(lines: Vec<Line>, mut count: usize, w: i64, map: &mut [u8]) ->
                 }
                 _ => {}
             }
+            */
+            match map.get(&cur) {
+                None => {map.insert(cur, 1);}
+                Some(1) => {
+                    map.insert(cur, 2);
+                    count += 1;
+                },
+                _ => {},
+            }
             cur += dif;
+
         }
     }
 
@@ -130,7 +147,8 @@ pub fn solve(input: &mut dyn BufRead, verify_expected: bool, output: bool) -> Du
     });
     let straight = lines;
 
-    let mut map = vec![0; (max_x * max_y) as usize];
+    // let mut map = vec![0; (max_x * max_y) as usize];
+    let mut map = HashMap::new();
 
     let part1 = count_overlaps(straight, 0, max_x as i64, &mut map);
     let part2 = count_overlaps(diagonals, part1, max_x as i64, &mut map);
