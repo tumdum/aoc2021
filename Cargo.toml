@@ -2,11 +2,8 @@
 name = "aoc21"
 version = "0.1.0"
 edition = "2021"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+authors = ["Tomasz Kłak <tomasz@tomaszklak.pl>"]
 
 [dependencies]
 smallvec="1"
-
-[profile.release]
-debug=true
+structopt = "0.3"

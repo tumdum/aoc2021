@@ -12,7 +12,7 @@ enum Dir {
 impl FromStr for Dir {
     type Err = ();
     fn from_str(s: &str) -> Result<Self, ()> {
-        let mut s = s.split(" ");
+        let mut s = s.split(' ');
         let kind = s.next().unwrap();
         let v = s.next().unwrap().parse().unwrap();
         match kind {
