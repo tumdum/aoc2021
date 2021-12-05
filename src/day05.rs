@@ -3,6 +3,7 @@ use std::io::BufRead;
 use std::ops::{AddAssign, Sub};
 use std::str::FromStr;
 use std::time::{Duration, Instant};
+use std::ops::{Index, IndexMut};
 
 #[derive(Debug, Clone, Copy, PartialOrd, Ord, PartialEq, Eq, Hash)]
 struct Point {
@@ -78,18 +79,21 @@ impl FromStr for Line {
     }
 }
 
-fn count_overlaps(lines: Vec<Line>, mut count: usize, w: i64, map: &mut [u8]) -> usize {
+fn count_overlaps(lines: Vec<Line>, mut count: usize, w: i64, map: &mut [Cell]) -> usize {
     for l in lines {
         let dif = l.end - l.start;
         let len = dif.len() + 1;
         let dif = dif.normalize();
         let mut cur = l.start;
         for _ in 0..len {
-            let v = &mut map[(cur.y * w + cur.x) as usize];
-            match v {
-                0 => *v = 1,
+            let idx = (cur.y * w + cur.x) as usize;
+            let inside_idx = idx % 4;
+            let idx = idx / 4;
+            let v = &mut map[idx];
+            match v.get(inside_idx) {
+                0 => v.set(inside_idx,1),
                 1 => {
-                    *v = 2;
+                    v.set(inside_idx, 2);
                     count += 1;
                 }
                 _ => {}
@@ -130,7 +134,7 @@ pub fn solve(input: &mut dyn BufRead, verify_expected: bool, output: bool) -> Du
     });
     let straight = lines;
 
-    let mut map = vec![0; (max_x * max_y) as usize];
+    let mut map = vec![Cell::new(); ((max_x * max_y) as usize)/4];
 
     let part1 = count_overlaps(straight, 0, max_x as i64, &mut map);
     let part2 = count_overlaps(diagonals, part1, max_x as i64, &mut map);
@@ -144,4 +148,73 @@ pub fn solve(input: &mut dyn BufRead, verify_expected: bool, output: bool) -> Du
         println!("\t{}", part2);
     }
     e
+}
+
+#[derive(Clone,Copy)]
+struct Cell {
+    b: u8,
+}
+
+impl Cell {
+    fn new() -> Self {
+        Self{b:0}
+    }
+
+    fn get(&self, i: usize) -> u8 {
+        match i {
+            0 => self.b & 0b11,
+            1 => (self.b & 0b1100) >> 2,
+            2 => (self.b & 0b110000)>> 4,
+            3 => (self.b & 0b11000000)>>6,
+            _ => unreachable!(),
+        }
+    }
+    fn set(&mut self, i: usize, v: u8) {
+        debug_assert!(v == 0 || v == 1 || v == 2);
+        match i {
+            0 => self.b = self.b | v,
+            1 => self.b = self.b | (v<<2),
+            2 => self.b = self.b | (v<<4),
+            3 => self.b = self.b | (v<<6),
+            _ => unreachable!(),
+        }
+    }
+}
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_cell() {
+        let v = [0u8, 1, 2];
+        for a in v {
+            for b in v {
+                for c in v {
+                    for d in v {
+                        let mut cell = Cell::new();
+                        let mut s = [0; 4];
+
+                        s[0] = a;
+                        cell.set(0,a);
+
+                        s[1] = b;
+                        cell.set(1,b);
+
+                        s[2] = c;
+                        cell.set(2,c);
+
+                        s[3] = d;
+                        cell.set(3,d);
+
+                        assert_eq!(s[0], cell.get(0));
+                        assert_eq!(s[1], cell.get(1));
+                        assert_eq!(s[2], cell.get(2));
+                        assert_eq!(s[3], cell.get(3));
+                    }
+                }
+            }
+        }
+    }
 }
