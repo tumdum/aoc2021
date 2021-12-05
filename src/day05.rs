@@ -79,7 +79,12 @@ impl FromStr for Line {
     }
 }
 
-fn count_overlaps(lines: Vec<Line>, mut count: usize, w: i64, map: &mut HashMap<Point, u8>) -> usize {
+fn count_overlaps(
+    lines: Vec<Line>,
+    mut count: usize,
+    w: i32,
+    map: &mut HashMap<u32, Cell>,
+) -> usize {
     let mut cl = 0;
     for l in lines {
         cl += 1;
@@ -102,16 +107,19 @@ fn count_overlaps(lines: Vec<Line>, mut count: usize, w: i64, map: &mut HashMap<
                 _ => {}
             }
             */
-            match map.get(&cur) {
-                None => {map.insert(cur, 1);}
-                Some(1) => {
-                    map.insert(cur, 2);
+            let idx = (cur.y * w + cur.x) as u32;
+            let inside_idx = idx % 4 as u32;
+            let idx = idx / 4;
+            let v = map.entry(idx).or_default();
+            match v.get(inside_idx) {
+                0 => v.set(inside_idx, 1),
+                1 => {
+                    v.set(inside_idx, 2);
                     count += 1;
-                },
-                _ => {},
+                }
+                _ => {}
             }
             cur += dif;
-
         }
     }
 
@@ -150,8 +158,8 @@ pub fn solve(input: &mut dyn BufRead, verify_expected: bool, output: bool) -> Du
     // let mut map = vec![0; (max_x * max_y) as usize];
     let mut map = HashMap::new();
 
-    let part1 = count_overlaps(straight, 0, max_x as i64, &mut map);
-    let part2 = count_overlaps(diagonals, part1, max_x as i64, &mut map);
+    let part1 = count_overlaps(straight, 0, max_x as i32, &mut map);
+    let part2 = count_overlaps(diagonals, part1, max_x as i32, &mut map);
     let e = s.elapsed();
     if verify_expected {
         assert_eq!(5632, part1);
@@ -162,4 +170,35 @@ pub fn solve(input: &mut dyn BufRead, verify_expected: bool, output: bool) -> Du
         println!("\t{}", part2);
     }
     e
+}
+
+#[derive(Default, Clone, Copy)]
+struct Cell {
+    b: u8,
+}
+
+impl Cell {
+    fn new() -> Self {
+        Self { b: 0 }
+    }
+
+    fn get(&self, i: u32) -> u8 {
+        match i {
+            0 => self.b & 0b11,
+            1 => (self.b & 0b1100) >> 2,
+            2 => (self.b & 0b110000) >> 4,
+            3 => (self.b & 0b11000000) >> 6,
+            _ => unreachable!(),
+        }
+    }
+    fn set(&mut self, i: u32, v: u8) {
+        debug_assert!(v == 0 || v == 1 || v == 2);
+        match i {
+            0 => self.b = self.b | v,
+            1 => self.b = self.b | (v << 2),
+            2 => self.b = self.b | (v << 4),
+            3 => self.b = self.b | (v << 6),
+            _ => unreachable!(),
+        }
+    }
 }
