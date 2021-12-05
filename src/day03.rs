@@ -56,11 +56,11 @@ fn part_two(all: &[SmallVec<[u8; 12]>]) -> i64 {
     for i in 0..all[0].len() {
         if most.len() > 1 {
             let b = most_frequent_bit(i, &most);
-            most = most.into_iter().filter(|n| n[i] == b).collect();
+            most.retain(|n| n[i] == b);
         }
         if least.len() > 1 {
             let b = most_frequent_bit(i, &least);
-            least = least.into_iter().filter(|n| n[i] != b).collect();
+            least.retain(|n| n[i] != b);
         }
     }
     let most: String = most[0]
