@@ -86,17 +86,19 @@ impl FromStr for Line {
     }
 }
 
-fn count_overlaps(lines: Vec<Line>, (max_x, max_y): (usize, usize), filter: bool) -> usize {
-    let lines: Vec<_> = if filter {
-        lines.iter().filter(|l| l.is_straight()).cloned().collect()
-    } else {
-        lines
-    };
+fn count_overlaps(
+    lines: Vec<Line>,
+    start_count: usize,
+    map: &mut [Vec<u8>],
+    is_straight: bool,
+) -> usize {
+    let lines: Vec<_> = lines
+        .iter()
+        .filter(|l| is_straight == l.is_straight())
+        .cloned()
+        .collect();
 
-    let row = vec![0u8; max_y as usize];
-    let mut map = vec![row; max_x as usize];
-
-    let mut count = 0;
+    let mut count = start_count;
 
     for l in lines {
         let dif = l.end - l.start;
@@ -137,8 +139,11 @@ pub fn solve(input: &mut dyn BufRead, verify_expected: bool) -> Duration {
         .unwrap()
         + 1) as usize;
 
-    let part1 = count_overlaps(lines.clone(), (max_x, max_y), true);
-    let part2 = count_overlaps(lines, (max_x, max_y), false);
+    let row = vec![0u8; max_y as usize];
+    let mut map = vec![row; max_x as usize];
+
+    let part1 = count_overlaps(lines.clone(), 0, &mut map, true);
+    let part2 = count_overlaps(lines, part1, &mut map, false);
     let e = s.elapsed();
     if verify_expected {
         assert_eq!(5632, part1);
