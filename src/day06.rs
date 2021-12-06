@@ -24,7 +24,7 @@ pub fn solve(input: &mut dyn BufRead, verify_expected: bool, output: bool) -> Du
     e
 }
 
-fn add(m: &mut [Option<usize>; 9], idx: usize, dif: usize) {
+fn add(m: &mut [Option<u64>; 9], idx: usize, dif: u64) {
     let entry = &mut m[idx];
     match entry {
         Some(v) => *entry = Some(*v + dif),
@@ -32,30 +32,26 @@ fn add(m: &mut [Option<usize>; 9], idx: usize, dif: usize) {
     }
 }
 
-fn grow_fishes(fishes: &[u8]) -> (usize, usize) {
+fn grow_fishes(fishes: &[u8]) -> (u64, u64) {
     let mut part1 = 0;
-    let mut age_to_count: [Option<usize>; 9] = [None; 9];
-    for f in fishes {
-        add(&mut age_to_count, *f as usize, 1);
-    }
+    let mut counts: [Option<u64>; 9] = [None; 9];
+    fishes.iter().for_each(|f| add(&mut counts, *f as usize, 1));
     for day in 0..256 {
         if day == 80 {
-            part1 = age_to_count.iter().flat_map(|v| v).sum();
+            part1 = counts.iter().flatten().sum();
         }
-        let mut new = 0;
-        let mut new_age_to_count = [None; 9];
-        for days in 0..age_to_count.len() {
-            if let Some(count) = age_to_count[days] {
+        let mut new_counts = [None; 9];
+        for days in 0..counts.len() {
+            if let Some(count) = counts[days] {
                 if days == 0 {
-                    add(&mut new_age_to_count, 6, count);
-                    new += count;
+                    add(&mut new_counts, 6, count);
                 } else {
-                    add(&mut new_age_to_count, days - 1, count);
+                    add(&mut new_counts, days - 1, count);
                 }
             }
         }
-        add(&mut new_age_to_count, 8, new);
-        age_to_count = new_age_to_count;
+        add(&mut new_counts, 8, counts[0].unwrap_or_default());
+        counts = new_counts;
     }
-    (part1, age_to_count.iter().flat_map(|v| v).sum())
+    (part1, counts.iter().flatten().sum())
 }
