@@ -1,21 +1,21 @@
 use std::io::BufRead;
 use std::time::{Duration, Instant};
 
-fn cost(f: i32, t: i32) -> i32 {
+fn cost(f: i64, t: i64) -> i64 {
     let n = (f - t).abs();
     n * (n + 1) / 2
 }
 
-fn total(from: i32, all: &Vec<i32>) -> i32 {
+fn total(from: i64, all: &Vec<i64>) -> i64 {
     all.iter().map(|d| (from - d).abs()).sum()
 }
 
-fn total_part2(from: i32, all: &Vec<i32>) -> i32 {
+fn total_part2(from: i64, all: &Vec<i64>) -> i64 {
     all.iter().map(|d| cost(*d, from)).sum()
 }
 
 pub fn solve(input: &mut dyn BufRead, verify_expected: bool, output: bool) -> Duration {
-    let input: Vec<i32> = input
+    let mut input: Vec<i64> = input
         .lines()
         .map(|s| s.unwrap())
         .next()
@@ -25,14 +25,15 @@ pub fn solve(input: &mut dyn BufRead, verify_expected: bool, output: bool) -> Du
         .collect();
     let s = Instant::now();
 
-    // NOTE: can be easily speedup with par_iter
+    input.sort();
 
-    let part1 = input.iter().map(|s| total(*s, &input)).min().unwrap();
+    let part1 = total(input[input.len() / 2], &input);
 
-    let min = *input.iter().min().unwrap();
-    let max = *input.iter().max().unwrap();
-
-    let part2 = (min..=max).map(|s| total_part2(s, &input)).min().unwrap();
+    let avg: i64 = input.iter().sum::<i64>() / input.len() as i64;
+    let part2 = ((avg - 1)..=(avg + 1))
+        .map(|s| total_part2(s, &input))
+        .min()
+        .unwrap();
 
     let e = s.elapsed();
     if verify_expected {
