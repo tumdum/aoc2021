@@ -25,14 +25,15 @@ pub fn solve(input: &mut dyn BufRead, verify_expected: bool, output: bool) -> Du
         .collect();
     let s = Instant::now();
 
-    // NOTE: can be easily speedup with par_iter
+    let avg = input.iter().sum::<i32>() / input.len() as i32;
 
     let part1 = input.iter().map(|s| total(*s, &input)).min().unwrap();
 
-    let min = *input.iter().min().unwrap();
-    let max = *input.iter().max().unwrap();
-
-    let part2 = (min..=max).map(|s| total_part2(s, &input)).min().unwrap();
+    // Check an arbitrary range around avg
+    let part2 = ((avg - 10)..=(avg + 10))
+        .map(|s| total_part2(s, &input))
+        .min()
+        .unwrap();
 
     let e = s.elapsed();
     if verify_expected {

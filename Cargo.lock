@@ -16,6 +16,7 @@ name = "aoc21"
 version = "0.1.0"
 dependencies = [
  "criterion",
+ "rayon",
  "smallvec",
  "structopt",
 ]
