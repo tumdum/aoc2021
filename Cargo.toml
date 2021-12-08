@@ -7,6 +7,7 @@ authors = ["Tomasz Kłak <tomasz@tomaszklak.pl>"]
 [dependencies]
 smallvec="1"
 structopt = "0.3"
+maplit="1"
 
 [profile.release]
 debug=true
