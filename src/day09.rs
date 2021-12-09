@@ -1,5 +1,5 @@
+use rustc_hash::FxHashSet;
 use std::cmp::Reverse;
-use std::collections::BTreeSet;
 use std::io::BufRead;
 use std::time::{Duration, Instant};
 
@@ -35,8 +35,8 @@ fn basin_neighbours(input: &[Vec<I>], (x, y): (I, I)) -> impl Iterator<Item = (I
 
 fn basin_size(input: &[Vec<I>], (x, y): (I, I)) -> usize {
     // HashSet seems to be slower here
-    let mut res = BTreeSet::new();
-    let mut todo = BTreeSet::new();
+    let mut res = FxHashSet::default();
+    let mut todo = FxHashSet::default();
     todo.insert((x, y));
     while !todo.is_empty() {
         let next = *todo.iter().next().unwrap();

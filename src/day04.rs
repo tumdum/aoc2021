@@ -1,12 +1,12 @@
+use rustc_hash::FxHashMap;
 use std::cell::RefCell;
-use std::collections::HashMap;
 use std::io::BufRead;
 use std::time::{Duration, Instant};
 
 const LEN: u8 = 5;
 
 struct Board {
-    inv: HashMap<u8, (u8, u8)>,
+    inv: FxHashMap<u8, (u8, u8)>,
     sum: u32,
     cols: [u8; LEN as usize],
     rows: [u8; LEN as usize],
@@ -14,7 +14,7 @@ struct Board {
 
 impl Board {
     fn new(v: Vec<Vec<u32>>) -> Self {
-        let mut inv = HashMap::new();
+        let mut inv = FxHashMap::default();
         let mut sum = 0;
         for i in 0..v.len() {
             for j in 0..v[i].len() {

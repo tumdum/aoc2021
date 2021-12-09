@@ -8,6 +8,7 @@ authors = ["Tomasz Kłak <tomasz@tomaszklak.pl>"]
 smallvec="1"
 structopt = "0.3"
 maplit="1"
+rustc-hash = "1"
 
 [profile.release]
 debug=true
