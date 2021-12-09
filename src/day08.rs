@@ -4,6 +4,7 @@ use std::io::BufRead;
 use std::time::{Duration, Instant};
 
 type V = smallvec::SmallVec<[u8; 7]>;
+const A: u8 = b'a';
 
 fn solve_part1(lines: &[String]) -> usize {
     let mut c = 0;
@@ -26,19 +27,10 @@ fn conv(s: &str) -> V {
     v
 }
 
-fn trans(
-    input: &[u8],
-    map: &FxHashMap<u8, FxHashSet<u8>>,
-    chars_to_digit: &FxHashMap<V, usize>,
-) -> usize {
-    debug_assert!(map.iter().all(|v| v.1.len() == 1));
-    let mut translated: V = input
-        .iter()
-        .map(|c| *map[c].iter().next().unwrap())
-        .collect();
+fn trans(input: &[u8], map: [u8; 7], chars_to_digit: &FxHashMap<V, u8>) -> usize {
+    let mut translated: V = input.iter().map(|c| map[(c - A) as usize]).collect();
     translated.sort();
-    let ret = chars_to_digit[&translated];
-    ret
+    chars_to_digit[&translated] as usize
 }
 
 fn solve_part2(lines: &[String]) -> usize {
@@ -61,7 +53,7 @@ fn solve_part2(lines: &[String]) -> usize {
     }
     .into_iter()
     .collect();
-    let chars_to_digit: FxHashMap<V, usize> = digit_to_chars
+    let chars_to_digit: FxHashMap<V, u8> = digit_to_chars
         .iter()
         .map(|(d, c)| {
             let mut tmp: V = c.iter().cloned().collect();
@@ -173,9 +165,14 @@ fn solve_part2(lines: &[String]) -> usize {
             .filter(|tmp| tmp.1.len() > 1)
             .for_each(|tmp| *tmp.1 = tmp.1.difference(&singletons).cloned().collect());
 
+        let mut lookup = [0u8; 7];
+        for (from, to) in &cands {
+            lookup[(from - A) as usize] = *to.iter().next().unwrap();
+        }
+
         c += out
             .iter()
-            .fold(0, |acc, p| 10 * acc + trans(p, &cands, &chars_to_digit));
+            .fold(0, |acc, p| 10 * acc + trans(p, lookup, &chars_to_digit));
     }
     c
 }
