@@ -1,8 +1,9 @@
 use maplit::{btreeset, hashmap};
 use rustc_hash::{FxHashMap, FxHashSet};
-use std::collections::BTreeSet;
 use std::io::BufRead;
 use std::time::{Duration, Instant};
+
+type V = smallvec::SmallVec<[u8; 7]>;
 
 fn solve_part1(lines: &[String]) -> usize {
     let mut c = 0;
@@ -18,8 +19,9 @@ fn solve_part1(lines: &[String]) -> usize {
     c
 }
 
-fn conv(s: &str) -> Vec<u8> {
-    let mut v: Vec<_> = s.as_bytes().to_owned();
+fn conv(s: &str) -> V {
+    let mut v: V = s.bytes().collect();
+    debug_assert!(!v.spilled());
     v.sort();
     v
 }
@@ -27,13 +29,14 @@ fn conv(s: &str) -> Vec<u8> {
 fn trans(
     input: &[u8],
     map: &FxHashMap<u8, FxHashSet<u8>>,
-    chars_to_digit: &FxHashMap<BTreeSet<u8>, usize>,
+    chars_to_digit: &FxHashMap<V, usize>,
 ) -> usize {
     debug_assert!(map.iter().all(|v| v.1.len() == 1));
-    let translated: BTreeSet<u8> = input
+    let mut translated: V = input
         .iter()
         .map(|c| *map[c].iter().next().unwrap())
         .collect();
+    translated.sort();
     let ret = chars_to_digit[&translated];
     ret
 }
@@ -58,9 +61,14 @@ fn solve_part2(lines: &[String]) -> usize {
     }
     .into_iter()
     .collect();
-    let chars_to_digit: FxHashMap<BTreeSet<u8>, usize> = digit_to_chars
+    let chars_to_digit: FxHashMap<V, usize> = digit_to_chars
         .iter()
-        .map(|(d, c)| (c.iter().cloned().collect(), *d))
+        .map(|(d, c)| {
+            let mut tmp: V = c.iter().cloned().collect();
+            debug_assert!(!tmp.spilled());
+            tmp.sort();
+            (tmp, *d)
+        })
         .collect();
     let mut chars_to_count: FxHashMap<u8, usize> = FxHashMap::default();
     for (_, chars) in &digit_to_chars {
@@ -117,7 +125,7 @@ fn solve_part2(lines: &[String]) -> usize {
     );
     let mut c = 0;
     for line in lines {
-        let mut line: Vec<Vec<_>> = line.split(' ').map(|s| conv(s)).collect();
+        let mut line: Vec<V> = line.split(' ').map(|s| conv(s)).collect();
         line.remove(10);
         let pats = &line[0..10];
         let out = &line[10..];
@@ -171,6 +179,7 @@ fn solve_part2(lines: &[String]) -> usize {
     }
     c
 }
+
 pub fn solve(input: &mut dyn BufRead, verify_expected: bool, output: bool) -> Duration {
     let input: Vec<String> = input.lines().map(|s| s.unwrap()).collect();
     let s = Instant::now();
