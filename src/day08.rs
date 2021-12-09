@@ -18,17 +18,19 @@ fn solve_part1(lines: &[String]) -> usize {
     c
 }
 
-fn conv(s: &str) -> BTreeSet<char> {
-    s.chars().collect()
+fn conv(s: &str) -> Vec<u8> {
+    let mut v: Vec<_> = s.as_bytes().to_owned();
+    v.sort();
+    v
 }
 
 fn trans(
-    input: &BTreeSet<char>,
-    map: &FxHashMap<char, FxHashSet<char>>,
-    chars_to_digit: &FxHashMap<BTreeSet<char>, usize>,
+    input: &[u8],
+    map: &FxHashMap<u8, FxHashSet<u8>>,
+    chars_to_digit: &FxHashMap<BTreeSet<u8>, usize>,
 ) -> usize {
     debug_assert!(map.iter().all(|v| v.1.len() == 1));
-    let translated: BTreeSet<char> = input
+    let translated: BTreeSet<u8> = input
         .iter()
         .map(|c| *map[c].iter().next().unwrap())
         .collect();
@@ -43,84 +45,84 @@ fn solve_part2(lines: &[String]) -> usize {
     known_uniq_lens.insert(3, 7);
     known_uniq_lens.insert(7, 8);
     let digit_to_chars: FxHashMap<_, FxHashSet<_>> = hashmap! {
-        0 => btreeset!{'a','b','c','e','f','g'}.into_iter().collect(),
-        1 => btreeset!{'c','f'}.into_iter().collect(),
-        2 => btreeset!{'a','c','d','e','g'}.into_iter().collect(),
-        3 => btreeset!{'a','c','d','f','g'}.into_iter().collect(),
-        4 => btreeset!{'b','c','d','f'}.into_iter().collect(),
-        5 => btreeset!{'a','b','d','f','g'}.into_iter().collect(),
-        6 => btreeset!{'a','b','d','e','f','g'}.into_iter().collect(),
-        7 => btreeset!{'a','c','f'}.into_iter().collect(),
-        8 => btreeset!{'a','b','c','d','e','f','g'}.into_iter().collect(),
-        9 => btreeset!{'a','b','c','d','f','g'}.into_iter().collect(),
+        0 => btreeset!{b'a',b'b',b'c',b'e',b'f',b'g'}.into_iter().collect(),
+        1 => btreeset!{b'c',b'f'}.into_iter().collect(),
+        2 => btreeset!{b'a',b'c',b'd',b'e',b'g'}.into_iter().collect(),
+        3 => btreeset!{b'a',b'c',b'd',b'f',b'g'}.into_iter().collect(),
+        4 => btreeset!{b'b',b'c',b'd',b'f'}.into_iter().collect(),
+        5 => btreeset!{b'a',b'b',b'd',b'f',b'g'}.into_iter().collect(),
+        6 => btreeset!{b'a',b'b',b'd',b'e',b'f',b'g'}.into_iter().collect(),
+        7 => btreeset!{b'a',b'c',b'f'}.into_iter().collect(),
+        8 => btreeset!{b'a',b'b',b'c',b'd',b'e',b'f',b'g'}.into_iter().collect(),
+        9 => btreeset!{b'a',b'b',b'c',b'd',b'f',b'g'}.into_iter().collect(),
     }
     .into_iter()
     .collect();
-    let chars_to_digit: FxHashMap<BTreeSet<char>, usize> = digit_to_chars
+    let chars_to_digit: FxHashMap<BTreeSet<u8>, usize> = digit_to_chars
         .iter()
         .map(|(d, c)| (c.iter().cloned().collect(), *d))
         .collect();
-    let mut chars_to_count: FxHashMap<char, usize> = FxHashMap::default();
+    let mut chars_to_count: FxHashMap<u8, usize> = FxHashMap::default();
     for (_, chars) in &digit_to_chars {
         for c in chars {
             *chars_to_count.entry(*c).or_default() += 1;
         }
     }
-    let mut count_to_chars: FxHashMap<usize, FxHashSet<char>> = FxHashMap::default();
+    let mut count_to_chars: FxHashMap<usize, FxHashSet<u8>> = FxHashMap::default();
     for (c, count) in &chars_to_count {
         count_to_chars.entry(*count).or_default().insert(*c);
     }
     let mut cands: FxHashMap<_, FxHashSet<_>> = FxHashMap::default();
     cands.insert(
-        'a',
-        btreeset! {'a','b','c','d','e','f','g'}
+        b'a',
+        btreeset! {b'a',b'b',b'c',b'd',b'e',b'f',b'g'}
             .into_iter()
             .collect(),
     );
     cands.insert(
-        'b',
-        btreeset! {'a','b','c','d','e','f','g'}
+        b'b',
+        btreeset! {b'a',b'b',b'c',b'd',b'e',b'f',b'g'}
             .into_iter()
             .collect(),
     );
     cands.insert(
-        'c',
-        btreeset! {'a','b','c','d','e','f','g'}
+        b'c',
+        btreeset! {b'a',b'b',b'c',b'd',b'e',b'f',b'g'}
             .into_iter()
             .collect(),
     );
     cands.insert(
-        'd',
-        btreeset! {'a','b','c','d','e','f','g'}
+        b'd',
+        btreeset! {b'a',b'b',b'c',b'd',b'e',b'f',b'g'}
             .into_iter()
             .collect(),
     );
     cands.insert(
-        'e',
-        btreeset! {'a','b','c','d','e','f','g'}
+        b'e',
+        btreeset! {b'a',b'b',b'c',b'd',b'e',b'f',b'g'}
             .into_iter()
             .collect(),
     );
     cands.insert(
-        'f',
-        btreeset! {'a','b','c','d','e','f','g'}
+        b'f',
+        btreeset! {b'a',b'b',b'c',b'd',b'e',b'f',b'g'}
             .into_iter()
             .collect(),
     );
     cands.insert(
-        'g',
-        btreeset! {'a','b','c','d','e','f','g'}
+        b'g',
+        btreeset! {b'a',b'b',b'c',b'd',b'e',b'f',b'g'}
             .into_iter()
             .collect(),
     );
     let mut c = 0;
     for line in lines {
-        let mut line: Vec<BTreeSet<char>> = line.split(' ').map(|s| conv(s)).collect();
+        let mut line: Vec<Vec<_>> = line.split(' ').map(|s| conv(s)).collect();
         line.remove(10);
         let pats = &line[0..10];
         let out = &line[10..];
         let mut cands = cands.clone();
-        let mut counts_of_chars: FxHashMap<char, usize> = FxHashMap::default();
+        let mut counts_of_chars: FxHashMap<u8, usize> = FxHashMap::default();
         for pat in pats {
             for c in pat {
                 *counts_of_chars.entry(*c).or_default() += 1;
@@ -129,7 +131,7 @@ fn solve_part2(lines: &[String]) -> usize {
         for (c, count) in &counts_of_chars {
             let candidate = &count_to_chars[&count];
             if candidate.len() == 1 {
-                let s: char = *candidate.iter().next().unwrap();
+                let s: u8 = *candidate.iter().next().unwrap();
                 for (_, v) in cands.iter_mut() {
                     v.remove(&s);
                 }
