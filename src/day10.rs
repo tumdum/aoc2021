@@ -1,53 +1,58 @@
-use std::collections::VecDeque;
 use std::io::BufRead;
 use std::time::{Duration, Instant};
 
-fn check_corrupted(s: &[char]) -> Result<VecDeque<char>, char> {
-    let mut stack = VecDeque::new();
+type V = smallvec::SmallVec<[u8; 16]>;
+
+fn check_corrupted(s: &[u8]) -> Result<V, u8> {
+    let mut stack = V::new();
     for c in s {
-        if *c == '(' || *c == '[' || *c == '{' || *c == '<' {
-            stack.push_back(*c);
-        } else if inv(stack.pop_back().unwrap()) != *c {
+        debug_assert!(!stack.spilled());
+        if *c < 4 {
+            stack.push(*c);
+        } else if inv(stack.pop().unwrap()) != *c {
             return Err(*c);
         }
     }
+    debug_assert!(!stack.spilled());
     Ok(stack)
 }
 
-fn inv(c: char) -> char {
+fn map(c: char) -> u8 {
     match c {
-        '(' => ')',
-        '[' => ']',
-        '{' => '}',
-        '<' => '>',
+        '(' => 0,
+        '[' => 1,
+        '{' => 2,
+        '<' => 3,
+        ')' => 4,
+        ']' => 5,
+        '}' => 6,
+        '>' => 7,
         _ => unreachable!(),
     }
 }
 
-fn cost(c: char) -> usize {
+fn inv(c: u8) -> u8 {
+    c + 4
+}
+
+fn cost(c: u8) -> usize {
     match c {
-        ')' => 3,
-        ']' => 57,
-        '}' => 1197,
-        '>' => 25137,
+        4 => 3,
+        5 => 57,
+        6 => 1197,
+        7 => 25137,
         _ => unreachable!(),
     }
 }
 
-fn score(c: char) -> usize {
-    match c {
-        ')' => 1,
-        ']' => 2,
-        '}' => 3,
-        '>' => 4,
-        _ => unreachable!(),
-    }
+fn score(c: u8) -> usize {
+    c as usize - 3
 }
 
 pub fn solve(input: &mut dyn BufRead, verify_expected: bool, output: bool) -> Duration {
-    let input: Vec<Vec<char>> = input
+    let input: Vec<V> = input
         .lines()
-        .map(|s| s.unwrap().chars().collect())
+        .map(|s| s.unwrap().chars().map(map).collect())
         .collect();
 
     let s = Instant::now();
