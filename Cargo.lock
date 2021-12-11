@@ -18,6 +18,7 @@ dependencies = [
  "criterion",
  "itertools",
  "maplit",
+ "num-traits",
  "rustc-hash",
  "smallvec",
  "structopt",
