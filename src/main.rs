@@ -36,6 +36,7 @@ fn main() {
         &aoc21::day08::solve,
         &aoc21::day09::solve,
         &aoc21::day10::solve,
+        &aoc21::day11::solve,
     ];
 
     let mut total = Duration::from_secs(0);

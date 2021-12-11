@@ -9,6 +9,7 @@ smallvec="1"
 structopt = "0.3"
 maplit="1"
 rustc-hash = "1"
+itertools = "0.10"
 
 [profile.release]
 debug=true

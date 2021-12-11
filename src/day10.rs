@@ -17,7 +17,7 @@ fn check_corrupted(s: &[u8]) -> Result<V, u8> {
     Ok(stack)
 }
 
-fn map(c: char) -> u8 {
+const fn map(c: char) -> u8 {
     match c {
         '(' => 0,
         '[' => 1,
@@ -27,25 +27,25 @@ fn map(c: char) -> u8 {
         ']' => 5,
         '}' => 6,
         '>' => 7,
-        _ => unreachable!(),
+        _ => u8::max_value(),
     }
 }
 
-fn inv(c: u8) -> u8 {
+const fn inv(c: u8) -> u8 {
     c + 4
 }
 
-fn cost(c: u8) -> usize {
+const fn cost(c: u8) -> usize {
     match c {
         4 => 3,
         5 => 57,
         6 => 1197,
         7 => 25137,
-        _ => unreachable!(),
+        _ => usize::max_value()
     }
 }
 
-fn score(c: u8) -> usize {
+const fn score(c: u8) -> usize {
     c as usize - 3
 }
 
