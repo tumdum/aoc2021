@@ -16,6 +16,9 @@ struct Opt {
 
     #[structopt(short, long)]
     input_file: Option<PathBuf>,
+
+    #[structopt(long)]
+    skip_output: bool,
 }
 
 fn median(array: &[Duration]) -> Duration {
@@ -58,7 +61,7 @@ fn main() {
                 Some(path) => BufReader::new(File::open(path).unwrap()),
             };
             let start = Instant::now();
-            let t = solution(&mut input, !opt.skip_verification, true);
+            let t = solution(&mut input, !opt.skip_verification, !opt.skip_output);
             let solution_with_io = start.elapsed();
             println!(
                 "Day {:02} took {:>10} to compute (with i/o: {:>10})",
