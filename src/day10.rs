@@ -41,7 +41,7 @@ const fn cost(c: u8) -> usize {
         5 => 57,
         6 => 1197,
         7 => 25137,
-        _ => usize::max_value()
+        _ => usize::max_value(),
     }
 }
 

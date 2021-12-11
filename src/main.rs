@@ -18,12 +18,24 @@ struct Opt {
     input_file: Option<PathBuf>,
 }
 
+fn median(array: &[Duration]) -> Duration {
+    if (array.len() % 2) == 0 {
+        let ind_left = array.len() / 2 - 1;
+        let ind_right = array.len() / 2;
+        (array[ind_left] + array[ind_right]).div_f64(2.0)
+    } else {
+        array[(array.len() / 2)]
+    }
+}
+
 fn d2s(d: Duration) -> String {
     format!("{:?}", d)
 }
 
 fn main() {
     let opt = Opt::from_args();
+    let mut times = vec![];
+    let mut times_io = vec![];
 
     let solutions: Vec<&dyn Fn(&mut dyn BufRead, bool, bool) -> Duration> = vec![
         &aoc21::day01::solve,
@@ -39,8 +51,6 @@ fn main() {
         &aoc21::day11::solve,
     ];
 
-    let mut total = Duration::from_secs(0);
-    let mut total_with_io = Duration::from_secs(0);
     for (i, solution) in solutions.iter().enumerate() {
         if Some(i + 1) == opt.day_to_run || opt.day_to_run.is_none() {
             let mut input = match &opt.input_file {
@@ -56,22 +66,39 @@ fn main() {
                 d2s(t),
                 d2s(solution_with_io)
             );
-            total += t;
-            total_with_io += solution_with_io;
+            times.push(t);
+            times_io.push(solution_with_io);
         }
     }
+
+    times.sort();
+    times_io.sort();
+
+    let total = times.iter().sum();
+    let min = times.iter().min();
+    let max = times.iter().max();
+
+    let total_io = times_io.iter().sum();
+    let min_io = times_io.iter().min();
+    let max_io = times_io.iter().max();
     if opt.day_to_run.is_none() {
         println!(
-            "\n         Total time for {} days: {:>10} (avg per day {:>10})",
+            "\n         Total time for {} days: {:>10} (avg per day {:>10}, med: {:>10}, min: {:>10}, max: {:>10})",
             solutions.len(),
             d2s(total),
-            d2s(total.div_f64(solutions.len() as f64))
+            d2s(total.div_f64(solutions.len() as f64)),
+            d2s(median(&times)),
+            d2s(*min.unwrap()),
+            d2s(*max.unwrap()),
         );
         println!(
-            "Total time with i/o for {} days: {:>10} (avg per day {:>10})",
+            "Total time with i/o for {} days: {:>10} (avg per day {:>10}, med: {:>10}, min: {:>10}, max: {:>10})",
             solutions.len(),
-            d2s(total_with_io),
-            d2s(total_with_io.div_f64(solutions.len() as f64))
+            d2s(total_io),
+            d2s(total_io.div_f64(solutions.len() as f64)),
+            d2s(median(&times_io)),
+            d2s(*min_io.unwrap()),
+            d2s(*max_io.unwrap()),
         );
     }
 }
