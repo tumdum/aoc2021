@@ -148,11 +148,19 @@ pub fn solve(input: &mut dyn BufRead, verify_expected: bool, output: bool) -> Du
     let mut g: G = G::from_elem(V::new(), 12);
     debug_assert!(!g.spilled());
 
-    for (a, b) in input {
-        let a = names[&a];
-        let b = names[&b];
+    for (a, b) in &input {
+        let a = names[&*a];
+        let b = names[&*b];
         g[a.idx()].push(b);
         g[b.idx()].push(a);
+    }
+
+    for (a, b) in &input {
+        let a = names[&*a];
+        let b = names[&*b];
+        // helps branch predictor? ;)
+        g[a.idx()].sort_unstable_by_key(|c| c.is_small());
+        g[b.idx()].sort_unstable_by_key(|c| c.is_small());
     }
 
     let avoid = VisitTracker::new();
