@@ -39,36 +39,45 @@ fn paths_to(target: &C, avoid: &VisitTracker, g: &G) -> usize {
             c += 1;
         } else if avoid.can_visit(*other) {
             if other.is_small() {
-                let mut new_avoid = avoid.clone();
+                let mut new_avoid = *avoid;
                 new_avoid.add(*other);
                 c += paths_to(other, &new_avoid, g);
             } else {
-                c += paths_to(other, &avoid, g);
+                c += paths_to(other, avoid, g);
             }
         }
     }
     c
 }
 
-fn paths_to2(target: C, tracker: &VisitTracker, g: &G) -> usize {
+fn paths_to2(
+    target: C,
+    tracker: &VisitTracker,
+    cache: &mut FxHashMap<(C, VisitTracker), usize>,
+    g: &G,
+) -> usize {
+    if let Some(ret) = cache.get(&(target, *tracker)) {
+        return *ret;
+    }
     let mut c = 0;
     for other in &g[target.idx()] {
         if *other == START {
             c += 1;
         } else if tracker.can_visit2(*other) {
             if other.is_small() {
-                let mut new_tracker: VisitTracker = tracker.clone();
+                let mut new_tracker: VisitTracker = *tracker;
                 new_tracker.add2(*other);
-                c += paths_to2(*other, &new_tracker, g);
+                c += paths_to2(*other, &new_tracker, cache, g);
             } else {
-                c += paths_to2(*other, tracker, g);
+                c += paths_to2(*other, tracker, cache, g);
             }
         }
     }
+    cache.insert((target, *tracker), c);
     c
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 struct VisitTracker {
     counts: [u8; 15],
     visited_twice: bool,
@@ -158,7 +167,6 @@ pub fn solve(input: &mut dyn BufRead, verify_expected: bool, output: bool) -> Du
     for (a, b) in &input {
         let a = names[&*a];
         let b = names[&*b];
-        // helps branch predictor? ;)
         g[a.idx()].sort_unstable_by_key(|c| c.is_small());
         g[b.idx()].sort_unstable_by_key(|c| c.is_small());
     }
@@ -166,8 +174,10 @@ pub fn solve(input: &mut dyn BufRead, verify_expected: bool, output: bool) -> Du
     let avoid = VisitTracker::new();
     let part1 = paths_to(&END, &avoid, &g);
 
+    let mut cache: FxHashMap<(C, VisitTracker), usize> = FxHashMap::default();
+
     let avoid = VisitTracker::new();
-    let part2 = paths_to2(END, &avoid, &g);
+    let part2 = paths_to2(END, &avoid, &mut cache, &g);
 
     let e = s.elapsed();
     if verify_expected {
