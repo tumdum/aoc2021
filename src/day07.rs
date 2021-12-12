@@ -6,11 +6,11 @@ fn cost(f: i64, t: i64) -> i64 {
     n * (n + 1) / 2
 }
 
-fn total(from: i64, all: &Vec<i64>) -> i64 {
+fn total(from: i64, all: &[i64]) -> i64 {
     all.iter().map(|d| (from - d).abs()).sum()
 }
 
-fn total_part2(from: i64, all: &Vec<i64>) -> i64 {
+fn total_part2(from: i64, all: &[i64]) -> i64 {
     all.iter().map(|d| cost(*d, from)).sum()
 }
 
@@ -25,7 +25,7 @@ pub fn solve(input: &mut dyn BufRead, verify_expected: bool, output: bool) -> Du
         .collect();
     let s = Instant::now();
 
-    input.sort();
+    input.sort_unstable();
 
     let part1 = total(input[input.len() / 2], &input);
 

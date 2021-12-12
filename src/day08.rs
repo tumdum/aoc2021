@@ -23,13 +23,13 @@ fn solve_part1(lines: &[String]) -> usize {
 fn conv(s: &str) -> V {
     let mut v: V = s.bytes().collect();
     debug_assert!(!v.spilled());
-    v.sort();
+    v.sort_unstable();
     v
 }
 
 fn trans(input: &[u8], map: [u8; 7], chars_to_digit: &FxHashMap<V, u8>) -> usize {
     let mut translated: V = input.iter().map(|c| map[(c - A) as usize]).collect();
-    translated.sort();
+    translated.sort_unstable();
     chars_to_digit[&translated] as usize
 }
 
@@ -58,12 +58,12 @@ fn solve_part2(lines: &[String]) -> usize {
         .map(|(d, c)| {
             let mut tmp: V = c.iter().cloned().collect();
             debug_assert!(!tmp.spilled());
-            tmp.sort();
+            tmp.sort_unstable();
             (tmp, *d)
         })
         .collect();
     let mut chars_to_count: FxHashMap<u8, usize> = FxHashMap::default();
-    for (_, chars) in &digit_to_chars {
+    for chars in digit_to_chars.values() {
         for c in chars {
             *chars_to_count.entry(*c).or_default() += 1;
         }
@@ -129,7 +129,7 @@ fn solve_part2(lines: &[String]) -> usize {
             }
         }
         for (c, count) in &counts_of_chars {
-            let candidate = &count_to_chars[&count];
+            let candidate = &count_to_chars[count];
             if candidate.len() == 1 {
                 let s: u8 = *candidate.iter().next().unwrap();
                 for (_, v) in cands.iter_mut() {

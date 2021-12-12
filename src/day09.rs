@@ -24,13 +24,13 @@ fn around(input: &[Vec<I>], (x, y): (I, I)) -> impl Iterator<Item = I> + '_ {
         (x - 1, y - 1),
     ]
     .into_iter()
-    .flat_map(move |p| get(&input, p))
+    .flat_map(move |p| get(input, p))
 }
 
 fn basin_neighbours(input: &[Vec<I>], (x, y): (I, I)) -> impl Iterator<Item = (I, I)> + '_ {
     [(x - 1, y), (x + 1, y), (x, y - 1), (x, y + 1)]
         .into_iter()
-        .flat_map(move |p| get(&input, p).and_then(|v| if v < 9 { Some(p) } else { None }))
+        .flat_map(move |p| get(input, p).and_then(|v| if v < 9 { Some(p) } else { None }))
 }
 
 fn basin_size(input: &[Vec<I>], (x, y): (I, I)) -> usize {
@@ -42,7 +42,7 @@ fn basin_size(input: &[Vec<I>], (x, y): (I, I)) -> usize {
         let next = *todo.iter().next().unwrap();
         todo.remove(&next);
         res.insert(next);
-        for p in basin_neighbours(&input, next) {
+        for p in basin_neighbours(input, next) {
             if !res.contains(&p) {
                 todo.insert(p);
             }
