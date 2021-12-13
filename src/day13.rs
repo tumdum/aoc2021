@@ -28,7 +28,7 @@ impl Paper {
                 if self.pos.contains(&(c, r)) {
                     print!("#");
                 } else {
-                    print!(".");
+                    print!(" ");
                 }
             }
             println!()
