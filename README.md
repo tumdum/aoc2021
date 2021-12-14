@@ -2,25 +2,26 @@
 solutions for advent of code 2021
 
 ```
-$ cargo run --release -- --skip-output                                                                                                                                                                                                                                              
-    Finished release [optimized + debuginfo] target(s) in 0.02s                                                                                                                                                                                                                                        
-     Running `target/release/aoc21 --skip-output`                                                                                                                                                                                                                                                      
-Day 01 took   28.333µs to compute (with i/o:  174.581µs)                                                                                                                                                                                                                                               
-Day 02 took   14.666µs to compute (with i/o:   102.04µs)                                                                                                                                                                                                                                               
-Day 03 took   86.291µs to compute (with i/o:  176.914µs)                                                                                                                                                                                                                                               
-Day 04 took   53.582µs to compute (with i/o:  249.621µs)                                                                                                                                                                                                                                               
-Day 05 took  726.904µs to compute (with i/o:  922.984µs)                                                                                                                                                                                                                                               
-Day 06 took   11.333µs to compute (with i/o:   33.999µs)                                                                                                                                                                                                                                               
-Day 07 took   24.333µs to compute (with i/o:    58.29µs)                                                                                                                                                                                                                                               
-Day 08 took 1.008108ms to compute (with i/o: 1.048107ms)                                                                                                                                                                                                                                               
-Day 09 took  879.944µs to compute (with i/o:  935.609µs)                                                                                                                                                                                                                                               
-Day 10 took   22.707µs to compute (with i/o:  162.997µs)                                                                                                                                                                                                                                               
-Day 11 took  456.367µs to compute (with i/o:  478.992µs)                                                                                                                                                                                                                                               
-Day 12 took  263.287µs to compute (with i/o:  288.953µs)                                                                                                                                                                                                                                               
-Day 13 took  105.332µs to compute (with i/o:   181.08µs)                                                                                                                                                                                                                                               
-                                                                                                                                                                                                                                                                                                       
-         Total time for 13 days: 3.681187ms (avg per day  283.168µs, med:   86.291µs, min:   11.333µs, max: 1.008108ms)                                                                                                                                                                                
-Total time with i/o for 13 days: 4.814167ms (avg per day   370.32µs, med:   181.08µs, min:   33.999µs, max: 1.048107ms)
+$ cargo run --release -- --skip-output
+    Finished release [optimized + debuginfo] target(s) in 0.02s
+     Running `target/release/aoc21 --skip-output`
+Day 01 took   26.041µs to compute (with i/o:  158.334µs)
+Day 02 took   11.333µs to compute (with i/o:  135.334µs)
+Day 03 took   89.626µs to compute (with i/o:  196.626µs)
+Day 04 took       68µs to compute (with i/o:  324.085µs)
+Day 05 took  703.502µs to compute (with i/o:  952.462µs)
+Day 06 took   11.375µs to compute (with i/o:   34.042µs)
+Day 07 took   69.084µs to compute (with i/o:  139.251µs)
+Day 08 took  981.087µs to compute (with i/o:  1.03017ms)
+Day 09 took  862.461µs to compute (with i/o:  951.628µs)
+Day 10 took   24.333µs to compute (with i/o:  175.042µs)
+Day 11 took  459.502µs to compute (with i/o:  482.168µs)
+Day 12 took  249.917µs to compute (with i/o:  277.585µs)
+Day 13 took  105.334µs to compute (with i/o:  173.417µs)
+Day 14 took  108.626µs to compute (with i/o:  142.625µs)
+
+         Total time for 14 days: 3.770221ms (avg per day  269.301µs, med:    97.48µs, min:   11.333µs, max:  981.087µs)
+Total time with i/o for 14 days: 5.172769ms (avg per day  369.483µs, med:  185.834µs, min:   34.042µs, max:  1.03017ms)
 ```
 
 # previous solutions
