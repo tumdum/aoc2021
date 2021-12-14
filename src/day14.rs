@@ -7,21 +7,21 @@ fn step(
     rules: &FxHashMap<(char, char), char>,
 ) -> FxHashMap<(char, char), usize> {
     let mut ret = FxHashMap::default();
-
-    for (p, count) in s {
-        if let Some(ins) = rules.get(p) {
-            *ret.entry((p.0, *ins)).or_default() += count;
-            *ret.entry((*ins, p.1)).or_default() += count;
-        } else {
-            *ret.entry(*p).or_default() += count;
+    for (rule, ins) in rules {
+        if let Some(count) = s.get(rule) {
+            *ret.entry((rule.0, *ins)).or_default() += count;
+            *ret.entry((*ins, rule.1)).or_default() += count;
         }
     }
     ret
 }
 
-fn answer(s: &FxHashMap<(char, char), usize>) -> usize {
-    let hist = make_hist(s);
-    hist.values().max().unwrap() - hist.values().min().unwrap()
+fn answer(s: &FxHashMap<(char, char), usize>, (first, last): (char, char)) -> usize {
+    let mut hist = make_hist(s);
+    *hist.entry(first).or_default() += 1;
+    *hist.entry(last).or_default() += 1;
+    // Each char is counted twice - two different pairs cantain it
+    (hist.values().max().unwrap() - hist.values().min().unwrap()) / 2
 }
 
 fn make_hist(s: &FxHashMap<(char, char), usize>) -> FxHashMap<char, usize> {
@@ -30,11 +30,6 @@ fn make_hist(s: &FxHashMap<(char, char), usize>) -> FxHashMap<char, usize> {
         *hist.entry(*a).or_default() += count;
         *hist.entry(*b).or_default() += count;
     }
-    hist.remove(&'a');
-    hist.remove(&'b');
-
-    // Each char is counted in two different pairs
-    hist.values_mut().for_each(|b| *b /= 2);
     hist
 }
 
@@ -58,19 +53,16 @@ pub fn solve(input: &mut dyn BufRead, verify_expected: bool, output: bool) -> Du
     for w in chars.windows(2) {
         *template.entry((w[0], w[1])).or_default() += 1;
     }
-
-    // Mark start/end
-    template.insert(('a', *chars.first().unwrap()), 1);
-    template.insert((*chars.last().unwrap(), 'b'), 1);
+    let edges = (*chars.first().unwrap(), *chars.last().unwrap());
 
     let mut part1 = 0;
     for s in 1..=40 {
         template = step(&template, &rules);
         if s == 10 {
-            part1 = answer(&template);
+            part1 = answer(&template, edges);
         }
     }
-    let part2 = answer(&template);
+    let part2 = answer(&template, edges);
 
     let e = s.elapsed();
     if verify_expected {
