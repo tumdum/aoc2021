@@ -68,7 +68,7 @@ fn main() {
             let t = solution(&mut input, !opt.skip_verification, !opt.skip_output);
             let solution_with_io = start.elapsed();
             println!(
-                "Day {:02} took {:>10} to compute (with i/o: {:>10})",
+                "Day {:02} took {:>14} to compute (with i/o: {:>10})",
                 i + 1,
                 d2s(t),
                 d2s(solution_with_io)
@@ -90,7 +90,7 @@ fn main() {
     let max_io = times_io.iter().max();
     if opt.day_to_run.is_none() {
         println!(
-            "\n         Total time for {} days: {:>10} (avg per day {:>10}, med: {:>10}, min: {:>10}, max: {:>10})",
+            "\n         Total time for {} days: {:>14} (avg per day {:>10}, med: {:>10}, min: {:>10}, max: {:>10})",
             solutions.len(),
             d2s(total),
             d2s(total.div_f64(solutions.len() as f64)),
@@ -99,7 +99,7 @@ fn main() {
             d2s(*max.unwrap()),
         );
         println!(
-            "Total time with i/o for {} days: {:>10} (avg per day {:>10}, med: {:>10}, min: {:>10}, max: {:>10})",
+            "Total time with i/o for {} days: {:>14} (avg per day {:>10}, med: {:>10}, min: {:>10}, max: {:>10})",
             solutions.len(),
             d2s(total_io),
             d2s(total_io.div_f64(solutions.len() as f64)),
