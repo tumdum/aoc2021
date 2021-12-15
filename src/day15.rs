@@ -1,21 +1,21 @@
-use rustc_hash::{FxHashMap, FxHashSet};
+use rustc_hash::FxHashSet;
 use std::cmp::Reverse;
 use std::collections::BinaryHeap;
 use std::io::BufRead;
 use std::time::{Duration, Instant};
 
-type P = (isize, isize);
+type P = (i32, i32);
 type V<T> = smallvec::SmallVec<[T; 4]>;
 
-fn get(map: &[Vec<u32>], (row, col): P) -> Option<u32> {
-    if row < 0 || col < 0 || row >= map.len() as isize || col >= map[row as usize].len() as isize {
+fn get<T: Copy>(map: &[Vec<T>], (row, col): P) -> Option<T> {
+    if row < 0 || col < 0 || row >= map.len() as i32 || col >= map[row as usize].len() as i32 {
         None
     } else {
         Some(map[row as usize][col as usize])
     }
 }
 
-fn neighbours(map: &[Vec<u32>], (r, c): P) -> V<(P, u32)> {
+fn neighbours(map: &[Vec<u8>], (r, c): P) -> V<(P, u8)> {
     let mut v = V::new();
     if let Some(cost) = get(map, (r - 1, c)) {
         v.push(((r - 1, c), cost));
@@ -33,7 +33,7 @@ fn neighbours(map: &[Vec<u32>], (r, c): P) -> V<(P, u32)> {
     v
 }
 
-fn make_bigger(map: &[Vec<u32>]) -> Vec<Vec<u32>> {
+fn make_bigger(map: &[Vec<u8>]) -> Vec<Vec<u8>> {
     let mut all = vec![];
     let mut rows = vec![];
     for row in map {
@@ -65,24 +65,23 @@ fn make_bigger(map: &[Vec<u32>]) -> Vec<Vec<u32>> {
     all
 }
 
-fn find(input: &[Vec<u32>]) -> u32 {
+fn find(input: &[Vec<u8>]) -> u32 {
     // A* but turns out zero estimate/heuristic is faster...
-    let end = (input.len() - 1) as isize;
+    let end = (input.len() - 1) as i32;
     let end = (end, end);
-    let mut lowest_risk_to: FxHashMap<P, u32> = FxHashMap::default();
-    lowest_risk_to.insert((0, 0), 0);
+    let mut lowest_risk_to = vec![vec![u32::max_value(); input.len()]; input.len()];
+    lowest_risk_to[0][0] = 0;
     let mut todo = BinaryHeap::new();
-    todo.push((Reverse((0) as u32), 0, (0, 0)));
-    while let Some((_, cost, node)) = todo.pop() {
+    todo.push((Reverse(0 as u32), (0, 0)));
+    while let Some((Reverse(cost), node)) = todo.pop() {
         if node == end {
             return cost;
         }
         for (neighbour, neighbour_cost) in neighbours(input, node) {
-            let new_cost = cost + neighbour_cost;
-            if new_cost < *lowest_risk_to.get(&neighbour).unwrap_or(&u32::max_value()) {
-                lowest_risk_to.insert(neighbour, new_cost);
-                let estimate = new_cost; // slower: "+ (end.0 - neighbour.0 + end.1 - neighbour.1) as u32;"
-                todo.push((Reverse(estimate), new_cost, neighbour));
+            let new_cost = cost + neighbour_cost as u32;
+            if new_cost < lowest_risk_to[neighbour.0 as usize][neighbour.1 as usize] {
+                lowest_risk_to[neighbour.0 as usize][neighbour.1 as usize] = new_cost;
+                todo.push((Reverse(new_cost), neighbour));
             }
         }
     }
@@ -90,12 +89,12 @@ fn find(input: &[Vec<u32>]) -> u32 {
 }
 
 pub fn solve(input: &mut dyn BufRead, verify_expected: bool, output: bool) -> Duration {
-    let input: Vec<Vec<u32>> = input
+    let input: Vec<Vec<u8>> = input
         .lines()
         .map(|s| {
             s.unwrap()
                 .chars()
-                .map(|c| c.to_digit(10).unwrap())
+                .map(|c| c.to_digit(10).unwrap() as u8)
                 .collect()
         })
         .collect();
@@ -140,7 +139,7 @@ fn dump(map: &[Vec<u32>]) {
 fn dump_path(map: &[Vec<u32>], points: &FxHashSet<P>) {
     for row in 0..map.len() {
         for col in 0..map[row].len() {
-            if points.contains(&(row as isize, col as isize)) {
+            if points.contains(&(row as i32, col as i32)) {
                 print!("{}", map[row][col]);
             } else {
                 print!(" ");
