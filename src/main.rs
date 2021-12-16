@@ -56,6 +56,7 @@ fn main() {
         &aoc21::day13::solve,
         &aoc21::day14::solve,
         &aoc21::day15::solve,
+        &aoc21::day16::solve,
     ];
 
     for (i, solution) in solutions.iter().enumerate() {
@@ -68,7 +69,7 @@ fn main() {
             let t = solution(&mut input, !opt.skip_verification, !opt.skip_output);
             let solution_with_io = start.elapsed();
             println!(
-                "Day {:02} took {:>14} to compute (with i/o: {:>10})",
+                "Day {:02} took {:>14} to compute (with i/o: {:>14})",
                 i + 1,
                 d2s(t),
                 d2s(solution_with_io)
