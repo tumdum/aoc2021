@@ -1,3 +1,4 @@
+use regex::Regex;
 use std::io::BufRead;
 use std::ops::RangeInclusive;
 use std::time::{Duration, Instant};
@@ -62,12 +63,38 @@ fn find_max_h(
     None
 }
 
-pub fn solve(_: &mut dyn BufRead, verify_expected: bool, output: bool) -> Duration {
-    let s = Instant::now();
+fn find_candidate_x(mut x: i64, target_x: &RangeInclusive<i64>) -> bool {
+    let mut p = (0, 0);
+    let max = *target_x.start().max(target_x.end());
 
-    // target area: x=282..314, y=-80..-45
-    let target_x = 282i64..=314;
-    let target_y = -80i64..=-45;
+    loop {
+        if p.0 > max {
+            break;
+        }
+
+        if target_x.contains(&p.0) {
+            return true;
+        }
+
+        let (np, nv) = step(p, (x, 0));
+        p = np;
+        x = nv.0;
+
+        if x == 0 {
+            break;
+        }
+    }
+    false
+}
+
+pub fn solve(input: &mut dyn BufRead, verify_expected: bool, output: bool) -> Duration {
+    let re = Regex::new(r#"target area: x=(.+)\.\.(.+), y=(.+)\.\.(.+)"#).unwrap();
+    let input = input.lines().map(|s| s.unwrap()).next().unwrap();
+    let cap = re.captures(&input).unwrap();
+    let target_x: RangeInclusive<i64> = (cap[1].parse().unwrap())..=(cap[2].parse().unwrap());
+    let target_y: RangeInclusive<i64> = (cap[3].parse().unwrap())..=(cap[4].parse().unwrap());
+
+    let s = Instant::now();
 
     let steps = target_x
         .start()
@@ -76,9 +103,22 @@ pub fn solve(_: &mut dyn BufRead, verify_expected: bool, output: bool) -> Durati
         .max(target_y.start().abs())
         .max(target_y.end().abs());
 
+    let max = target_x
+        .start()
+        .abs()
+        .max(target_x.end().abs())
+        .max(target_y.start().abs())
+        .max(target_y.end().abs());
+
+    let y_bound: i64 = target_y.start().abs().max(target_y.end().abs());
+
+    let xs = (0..=max)
+        .filter(|x| find_candidate_x(*x, &target_x))
+        .collect::<Vec<_>>();
+
     let mut heights = vec![];
-    for x in 20..=314 {
-        for y in -80..80 {
+    for x in xs {
+        for y in -y_bound..=y_bound {
             if let Some(h) = find_max_h((0, 0), (x, y), &target_x, &target_y, steps) {
                 heights.push(h);
             }
