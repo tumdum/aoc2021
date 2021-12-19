@@ -7,15 +7,17 @@ use std::ops::{Add, Sub};
 use std::str::FromStr;
 use std::time::{Duration, Instant};
 
+type V<T> = smallvec::SmallVec<[T; 26]>;
+
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Default, Hash)]
 struct P3 {
-    x: i64,
-    y: i64,
-    z: i64,
+    x: i32,
+    y: i32,
+    z: i32,
 }
 
 impl P3 {
-    fn rot_x(&self) -> Self {
+    fn rot_x(self) -> Self {
         Self {
             x: self.x,
             y: -self.z,
@@ -23,7 +25,7 @@ impl P3 {
         }
     }
 
-    fn rot_y(&self) -> Self {
+    const fn rot_y(self) -> Self {
         Self {
             x: -self.z,
             y: self.y,
@@ -31,7 +33,7 @@ impl P3 {
         }
     }
 
-    fn rot_z(&self) -> Self {
+    const fn rot_z(self) -> Self {
         Self {
             x: self.y,
             y: -self.x,
@@ -39,33 +41,30 @@ impl P3 {
         }
     }
 
-    fn dist(&self) -> usize {
+    const fn dist(&self) -> usize {
         (self.x.abs() + self.y.abs() + self.z.abs()) as usize
     }
 }
 
-fn rot_x(p: &P3, n: usize) -> P3 {
-    let mut ret = *p;
+fn rot_x(mut p: P3, n: usize) -> P3 {
     for _ in 0..n {
-        ret = ret.rot_x();
+        p = p.rot_x();
     }
-    ret
+    p
 }
 
-fn rot_y(p: &P3, n: usize) -> P3 {
-    let mut ret = *p;
+fn rot_y(mut p: P3, n: usize) -> P3 {
     for _ in 0..n {
-        ret = ret.rot_y();
+        p = p.rot_y();
     }
-    ret
+    p
 }
 
-fn rot_z(p: &P3, n: usize) -> P3 {
-    let mut ret = *p;
+fn rot_z(mut p: P3, n: usize) -> P3 {
     for _ in 0..n {
-        ret = ret.rot_z();
+        p = p.rot_z();
     }
-    ret
+    p
 }
 
 impl Debug for P3 {
@@ -121,57 +120,61 @@ fn relative_to_nth(points: &[P3], n: usize) -> (P3, FxHashSet<P3>) {
     (f(&P3 { x: 0, y: 0, z: 0 }), points.iter().map(f).collect())
 }
 
-fn generate_all_cands(points: &[P3]) -> Vec<(P3, FxHashSet<P3>)> {
-    let mut ret = vec![];
-    for i in 0..points.len() {
-        ret.push(relative_to_nth(points, i));
-    }
-    let mut real_ret = vec![];
+fn generate_all_cands(points: &[P3]) -> Vec<(P3, V<P3>)> {
+    let ret : Vec<_> = (0..points.len()).map(|i| relative_to_nth(points, i)).collect();
+    let mut real_ret: FxHashMap<P3, V<P3>> = FxHashMap::default();
     for x_rot in [0, 1, 2, 3] {
         for y_rot in [0, 1, 2, 3] {
             for z_rot in [0, 1, 2, 3] {
-                let f = |p: &P3| rot_z(&rot_y(&rot_x(p, x_rot), y_rot), z_rot);
+                let f = |p: P3| rot_z(rot_y(rot_x(p, x_rot), y_rot), z_rot);
                 for (origin, points) in &ret {
-                    let new_origin = f(origin);
-                    let new_points = points.iter().map(|p| f(p)).collect();
-                    real_ret.push((new_origin, new_points));
+                    real_ret
+                        .entry(f(*origin))
+                        .or_insert(points.into_iter().map(|p| f(*p)).collect());
                 }
             }
         }
     }
 
     real_ret
+        .into_iter()
+        .map(|(orig, points)| (orig, points))
+        .collect()
 }
 
 fn overlap<'a, 'b>(
     (base_origin, base_points): &'a (P3, FxHashSet<P3>),
-    candidates: &'b [(P3, FxHashSet<P3>)],
-) -> Option<(P3, &'b FxHashSet<P3>)> {
+    candidates: &'b [(P3, V<P3>)],
+) -> Option<(P3, &'b [P3])> {
     for (origin, cand) in candidates {
-        let common = cand.intersection(&base_points).count();
-        if common >= 12 {
-            let origin_in_zero = *origin - *base_origin;
-            return Some((origin_in_zero, cand));
+        let mut cand_size = cand.len();
+        for c in cand {
+            if !base_points.contains(c) {
+                cand_size -= 1;
+                if cand_size < 12 {
+                    break;
+                }
+            }
         }
+        if cand_size < 12 {
+            continue;
+        }
+        let origin_in_zero = *origin - *base_origin;
+        return Some((origin_in_zero, cand));
     }
     None
 }
 
 fn find_overlap_with(
     base: &[P3],
-    cache: &FxHashMap<usize, Vec<(P3, FxHashSet<P3>)>>,
+    cache: &[Vec<(P3, V<P3>)>],
 ) -> Option<(usize, P3, P3, FxHashSet<P3>)> {
     for i in 0..base.len() {
-        let base = relative_to_nth(base, i);
-        for (id, candidates) in cache {
+        let mut base = relative_to_nth(base, i);
+        for (id, candidates) in cache.iter().enumerate() {
             if let Some((origin, points)) = overlap(&base, candidates) {
-                let all: FxHashSet<P3> = base
-                    .1
-                    .iter()
-                    .cloned()
-                    .chain(points.iter().cloned())
-                    .collect();
-                return Some((*id, origin, base.0, all));
+                base.1.extend(points);
+                return Some((id, origin, base.0, base.1));
             }
         }
     }
@@ -180,29 +183,28 @@ fn find_overlap_with(
 
 pub fn solve(input: &mut dyn BufRead, verify_expected: bool, output: bool) -> Duration {
     let input: Vec<String> = input.lines().map(|s| s.unwrap()).collect();
-    let mut scanners: FxHashMap<_, _> = input.split(|s| s.is_empty()).map(parse_scanner).collect();
-
-    let mut cache: FxHashMap<_, _> = scanners
-        .iter()
-        .map(|(id, points)| (*id, generate_all_cands(points)))
-        .collect();
+    let scanners: FxHashMap<_, _> = input.split(|s| s.is_empty()).map(parse_scanner).collect();
 
     let s = Instant::now();
+    let mut cache: Vec<_> = scanners
+        .iter()
+        .map(|(_, points)| generate_all_cands(points))
+        .collect();
+
     let mut last_origin = P3::default();
 
     let mut origins = vec![last_origin];
     let mut zero = scanners[&0].clone();
-    cache.remove(&0);
+    cache.remove(0);
     while cache.len() > 0 {
-        let (id, origin, new_base_origin, all_points_in_zero) =
+        let (index, origin, new_base_origin, all_points_in_zero) =
             find_overlap_with(&zero, &cache).unwrap();
         origins.push(origin - last_origin);
         last_origin = last_origin + new_base_origin;
         zero = all_points_in_zero.into_iter().collect();
-        cache.remove(&id);
+        cache.remove(index);
     }
     let part1 = zero.len();
-    // zero.iter_mut().for_each(|p| *p = *p - last_origin);
 
     let mut part2 = 0;
     for (i, a) in origins.iter().enumerate() {
