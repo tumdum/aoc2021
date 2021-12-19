@@ -1,19 +1,26 @@
 use rustc_hash::{FxHashMap, FxHashSet};
 use std::convert::Infallible;
-use std::fmt::Debug;
-use std::fmt::Formatter;
+use std::fmt::{Debug,Formatter};
 use std::io::BufRead;
 use std::ops::{Add, Sub};
 use std::str::FromStr;
 use std::time::{Duration, Instant};
+use std::hash::{Hash, Hasher};
 
 type V<T> = smallvec::SmallVec<[T; 26]>;
 
-#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Default, Hash)]
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Default)]
 struct P3 {
     x: i32,
     y: i32,
     z: i32,
+}
+
+// Seems that the fxhash is slower than this:
+impl Hash for P3 {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        state.write_i32(self.x ^ self.y ^ self.z);
+    }
 }
 
 impl P3 {
@@ -121,7 +128,9 @@ fn relative_to_nth(points: &[P3], n: usize) -> (P3, FxHashSet<P3>) {
 }
 
 fn generate_all_cands(points: &[P3]) -> Vec<(P3, V<P3>)> {
-    let ret : Vec<_> = (0..points.len()).map(|i| relative_to_nth(points, i)).collect();
+    let ret: Vec<_> = (0..points.len())
+        .map(|i| relative_to_nth(points, i))
+        .collect();
     let mut real_ret: FxHashMap<P3, V<P3>> = FxHashMap::default();
     for x_rot in [0, 1, 2, 3] {
         for y_rot in [0, 1, 2, 3] {
