@@ -1,11 +1,12 @@
+use itertools::iproduct;
 use rustc_hash::{FxHashMap, FxHashSet};
 use std::convert::Infallible;
-use std::fmt::{Debug,Formatter};
+use std::fmt::{Debug, Formatter};
+use std::hash::{Hash, Hasher};
 use std::io::BufRead;
 use std::ops::{Add, Sub};
 use std::str::FromStr;
 use std::time::{Duration, Instant};
-use std::hash::{Hash, Hasher};
 
 type V<T> = smallvec::SmallVec<[T; 26]>;
 
@@ -132,7 +133,8 @@ fn generate_all_cands(points: &[P3]) -> Vec<(P3, V<P3>)> {
         .map(|i| relative_to_nth(points, i))
         .collect();
     let mut real_ret: FxHashMap<P3, V<P3>> = FxHashMap::default();
-    for x_rot in [0, 1, 2, 3] {
+    for x_rot in [0, 1] {
+        // this reduced number of x rotations still produces all required rotations
         for y_rot in [0, 1, 2, 3] {
             for z_rot in [0, 1, 2, 3] {
                 let f = |p: P3| rot_z(rot_y(rot_x(p, x_rot), y_rot), z_rot);
@@ -215,17 +217,11 @@ pub fn solve(input: &mut dyn BufRead, verify_expected: bool, output: bool) -> Du
     }
     let part1 = zero.len();
 
-    let mut part2 = 0;
-    for (i, a) in origins.iter().enumerate() {
-        for (j, b) in origins.iter().enumerate() {
-            if i != j {
-                let d = (*a - *b).dist();
-                if d > part2 {
-                    part2 = d;
-                }
-            }
-        }
-    }
+    let part2 = iproduct!(&origins, &origins)
+        .filter(|(a, b)| a != b)
+        .map(|(a, b)| (*a - *b).dist())
+        .max()
+        .unwrap();
 
     let e = s.elapsed();
     if verify_expected {
