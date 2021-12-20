@@ -1,21 +1,32 @@
-use rustc_hash::FxHashMap;
+use itertools::iproduct;
 use std::io::BufRead;
 use std::time::{Duration, Instant};
-use itertools::iproduct;
+
+const STEPS: i32 = 50;
+const OFFSET: (i32, i32) = (STEPS, STEPS);
+const MAP_SIZE: usize = 100 + 2 * STEPS as usize;
 
 fn get_new_pixel(
     (row, col): (i32, i32),
-    map: &FxHashMap<(i32, i32), bool>,
+    map: &[[bool; MAP_SIZE]; MAP_SIZE],
     algo: &[bool],
     default: bool,
+    row_min: i32,
+    row_max: i32,
+    col_min: i32,
+    col_max: i32,
 ) -> bool {
     let mut acc = 0;
     let mut i = 0;
     for row_d in [-1i8, 0, 1] {
         for col_d in [-1i8, 0, 1] {
-            let b = *map
-                .get(&(row + row_d as i32, col + col_d as i32))
-                .unwrap_or(&default);
+            let row = row + row_d as i32;
+            let col = col + col_d as i32;
+            let b = if row < row_min || row > row_max || col < col_min || col > col_max {
+                default
+            } else {
+                map[(OFFSET.0 + row) as usize][(OFFSET.1 + col) as usize]
+            };
             acc = acc | (1 << (9 - i - 1)) * (b as usize);
             i += 1;
         }
@@ -24,35 +35,48 @@ fn get_new_pixel(
 }
 
 fn step(
-    img: &FxHashMap<(i32, i32), bool>,
+    map: &[[bool; MAP_SIZE]; MAP_SIZE],
     algo: &[bool],
     default: bool,
     mut row_min: i32,
     mut row_max: i32,
     mut col_min: i32,
     mut col_max: i32,
-) -> (FxHashMap<(i32, i32), bool>, (i32, i32, i32, i32)) {
-    let mut ret = FxHashMap::default();
+) -> ([[bool; MAP_SIZE]; MAP_SIZE], (i32, i32, i32, i32)) {
+    let mut ret = [[false; MAP_SIZE]; MAP_SIZE];
     row_min -= 1;
     col_min -= 1;
     row_max += 1;
     col_max += 1;
     for row in row_min..=row_max {
         for col in col_min..=col_max {
-            ret.insert((row, col), get_new_pixel((row, col), img, algo, default));
+            let val = get_new_pixel(
+                (row, col),
+                map,
+                algo,
+                default,
+                row_min + 1,
+                row_max - 1,
+                col_min + 1,
+                col_max - 1,
+            );
+            ret[(OFFSET.0 + row) as usize][(OFFSET.1 + col) as usize] = val;
         }
     }
     (ret, (row_min, row_max, col_min, col_max))
 }
 
 fn count(
-    m: &FxHashMap<(i32, i32), bool>,
+    map: &[[bool; MAP_SIZE]; MAP_SIZE],
     row_min: i32,
     row_max: i32,
     col_min: i32,
     col_max: i32,
 ) -> usize {
-    iproduct!(row_min..=row_max, col_min..=col_max).flat_map(|p| m.get(&p)).filter(|b| **b).count()
+    iproduct!(row_min..=row_max, col_min..=col_max)
+        .map(|p| map[(OFFSET.0 + p.0) as usize][(OFFSET.1 + p.1) as usize])
+        .filter(|b| *b)
+        .count()
 }
 
 pub fn solve(input: &mut dyn BufRead, verify_expected: bool, output: bool) -> Duration {
@@ -65,7 +89,7 @@ pub fn solve(input: &mut dyn BufRead, verify_expected: bool, output: bool) -> Du
 
     let input = &input[2..];
 
-    let mut map = FxHashMap::default();
+    let mut map = [[false; MAP_SIZE]; MAP_SIZE];
 
     let mut row_min = 0;
     let mut row_max = 0;
@@ -78,14 +102,12 @@ pub fn solve(input: &mut dyn BufRead, verify_expected: bool, output: bool) -> Du
         for col in 0..input[row].len() {
             col_min = col_min.min(col as i32);
             col_max = col_max.max(col as i32);
-            map.insert(
-                (row as i32, col as i32),
-                if input[row].chars().nth(col).unwrap() == '.' {
-                    false
-                } else {
-                    true
-                },
-            );
+            let val = if input[row].chars().nth(col).unwrap() == '.' {
+                false
+            } else {
+                true
+            };
+            map[(OFFSET.0 + row as i32) as usize][(OFFSET.1 + col as i32) as usize] = val;
         }
     }
 
@@ -95,7 +117,7 @@ pub fn solve(input: &mut dyn BufRead, verify_expected: bool, output: bool) -> Du
     let mut part1 = 0;
     let mut part2 = 0;
 
-    for i in 1..=50 {
+    for i in 1..=STEPS {
         let (m, (r_min, r_max, c_min, c_max)) =
             step(&map, &algo, default, row_min, row_max, col_min, col_max);
 
