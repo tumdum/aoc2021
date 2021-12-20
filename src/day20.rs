@@ -42,8 +42,8 @@ fn step(
     mut row_max: i32,
     mut col_min: i32,
     mut col_max: i32,
-) -> ([[bool; MAP_SIZE]; MAP_SIZE], (i32, i32, i32, i32)) {
-    let mut ret = [[false; MAP_SIZE]; MAP_SIZE];
+) -> (Box<[[bool; MAP_SIZE]; MAP_SIZE]>, (i32, i32, i32, i32)) {
+    let mut ret = Box::new([[false; MAP_SIZE]; MAP_SIZE]);
     row_min -= 1;
     col_min -= 1;
     row_max += 1;
@@ -89,7 +89,7 @@ pub fn solve(input: &mut dyn BufRead, verify_expected: bool, output: bool) -> Du
 
     let input = &input[2..];
 
-    let mut map = [[false; MAP_SIZE]; MAP_SIZE];
+    let mut map = Box::new([[false; MAP_SIZE]; MAP_SIZE]);
 
     let mut row_min = 0;
     let mut row_max = 0;
