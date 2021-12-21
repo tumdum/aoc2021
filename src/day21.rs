@@ -1,4 +1,6 @@
-use cached::proc_macro::cached;
+use cached::{cached, Cached};
+use rustc_hash::FxHashMap;
+use std::hash::Hash;
 use std::io::BufRead;
 use std::time::{Duration, Instant};
 
@@ -48,29 +50,64 @@ fn part1(mut pos: [u64; 2]) -> u64 {
     rolls * *scores.iter().min().unwrap()
 }
 
-#[cached]
-fn part2(current_player: u64, other_player: u64, current_score: u64, other_score: u64) -> [u64; 2] {
-    const SCORES: [u64; 27] = [
-        3, 4, 4, 4, 5, 5, 5, 5, 5, 5, 6, 6, 6, 6, 6, 6, 6, 7, 7, 7, 7, 7, 7, 8, 8, 8, 9,
-    ];
-    let mut wins = [0; 2];
-    for s in SCORES {
-        let mut current_player = current_player;
-        let mut current_score = current_score;
-        current_player += s;
-        if current_player > 10 {
-            current_player -= 10;
-        }
-        current_score += current_player;
-        if current_score >= 21 {
-            wins[0] += 1;
-        } else {
-            let sub_wins = part2(other_player, current_player, other_score, current_score);
-            wins[1] += sub_wins[0];
-            wins[0] += sub_wins[1];
-        }
+#[derive(Debug, Default)]
+struct FxCache<K: Hash + Eq, V> {
+    store: FxHashMap<K, V>,
+}
+
+impl<K: Hash + Eq, V> Cached<K, V> for FxCache<K, V> {
+    fn cache_get(&mut self, k: &K) -> Option<&V> {
+        self.store.get(k)
     }
-    wins
+    fn cache_get_mut(&mut self, k: &K) -> Option<&mut V> {
+        self.store.get_mut(k)
+    }
+    fn cache_get_or_set_with<F: FnOnce() -> V>(&mut self, k: K, f: F) -> &mut V {
+        self.store.entry(k).or_insert_with(f)
+    }
+    fn cache_set(&mut self, k: K, v: V) -> Option<V> {
+        self.store.insert(k, v)
+    }
+    fn cache_remove(&mut self, k: &K) -> Option<V> {
+        self.store.remove(k)
+    }
+    fn cache_clear(&mut self) {
+        self.store.clear();
+    }
+    fn cache_reset(&mut self) {
+        self.store = FxHashMap::default();
+    }
+    fn cache_size(&self) -> usize {
+        self.store.len()
+    }
+}
+
+cached! {
+    PART2: FxCache<(u64,u64,u64,u64), [u64;2]> = FxCache::default();
+
+    fn part2(current_player: u64, other_player: u64, current_score: u64, other_score: u64) -> [u64; 2] = {
+        const SCORES: [u64; 27] = [
+            3, 4, 4, 4, 5, 5, 5, 5, 5, 5, 6, 6, 6, 6, 6, 6, 6, 7, 7, 7, 7, 7, 7, 8, 8, 8, 9,
+        ];
+        let mut wins = [0; 2];
+        for s in SCORES {
+            let mut current_player = current_player;
+            let mut current_score = current_score;
+            current_player += s;
+            if current_player > 10 {
+                current_player -= 10;
+            }
+            current_score += current_player;
+            if current_score >= 21 {
+                wins[0] += 1;
+            } else {
+                let sub_wins = part2(other_player, current_player, other_score, current_score);
+                wins[1] += sub_wins[0];
+                wins[0] += sub_wins[1];
+            }
+        }
+        wins
+    }
 }
 
 fn parse(s: &str) -> u64 {
