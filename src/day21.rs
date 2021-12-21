@@ -86,11 +86,10 @@ cached! {
     PART2: FxCache<(u64,u64,u64,u64), [u64;2]> = FxCache::default();
 
     fn part2(current_player: u64, other_player: u64, current_score: u64, other_score: u64) -> [u64; 2] = {
-        const SCORES: [u64; 27] = [
-            3, 4, 4, 4, 5, 5, 5, 5, 5, 5, 6, 6, 6, 6, 6, 6, 6, 7, 7, 7, 7, 7, 7, 8, 8, 8, 9,
-        ];
+        const COUNTS : [u64; 10] = [0,0,0,1,3,6,7,6,3,1];
+        const UNIQ_SCORES : [u64;7]= [3,4,5,6,7,8,9];
         let mut wins = [0; 2];
-        for s in SCORES {
+        for s in UNIQ_SCORES {
             let mut current_player = current_player;
             let mut current_score = current_score;
             current_player += s;
@@ -98,12 +97,13 @@ cached! {
                 current_player -= 10;
             }
             current_score += current_player;
+            let factor = COUNTS[s as usize];
             if current_score >= 21 {
-                wins[0] += 1;
+                wins[0] += factor;
             } else {
                 let sub_wins = part2(other_player, current_player, other_score, current_score);
-                wins[1] += sub_wins[0];
-                wins[0] += sub_wins[1];
+                wins[1] += factor * sub_wins[0];
+                wins[0] += factor * sub_wins[1];
             }
         }
         wins
