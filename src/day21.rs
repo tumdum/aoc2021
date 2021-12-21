@@ -49,25 +49,25 @@ fn part1(mut pos: [u64; 2]) -> u64 {
 }
 
 #[cached]
-fn part2(pos: [u64; 2], scores: [u64; 2], player: usize) -> [u64; 2] {
+fn part2(current_player: u64, other_player: u64, current_score: u64, other_score: u64) -> [u64; 2] {
     const SCORES: [u64; 27] = [
         3, 4, 4, 4, 5, 5, 5, 5, 5, 5, 6, 6, 6, 6, 6, 6, 6, 7, 7, 7, 7, 7, 7, 8, 8, 8, 9,
     ];
     let mut wins = [0; 2];
     for s in SCORES {
-        let mut pos = pos;
-        let mut scores = scores;
-        pos[player] += s;
-        if pos[player] > 10 {
-            pos[player] -= 10;
+        let mut current_player = current_player;
+        let mut current_score = current_score;
+        current_player += s;
+        if current_player > 10 {
+            current_player -= 10;
         }
-        scores[player] += pos[player];
-        if scores[player] >= 21 {
-            wins[player] += 1;
+        current_score += current_player;
+        if current_score >= 21 {
+            wins[0] += 1;
         } else {
-            let sub_wins = part2(pos, scores, if player == 0 { 1 } else { 0 });
-            wins[0] += sub_wins[0];
-            wins[1] += sub_wins[1];
+            let sub_wins = part2(other_player, current_player, other_score, current_score);
+            wins[1] += sub_wins[0];
+            wins[0] += sub_wins[1];
         }
     }
     wins
@@ -84,7 +84,7 @@ pub fn solve(input: &mut dyn BufRead, verify_expected: bool, output: bool) -> Du
     let s = Instant::now();
 
     let part1 = part1(input);
-    let part2 = *part2(input, [0, 0], 0).iter().max().unwrap();
+    let part2 = *part2(input[0], input[1], 0, 0).iter().max().unwrap();
 
     let e = s.elapsed();
     if verify_expected {
