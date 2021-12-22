@@ -85,3 +85,9 @@ Parenthesis problem, which means stack. Part 1 asks us to check if parens match,
 Part 2 asks us to find completion for correct but incomplete sequence, which is easy to derive from stack when we finish processing incomplet string.
 
 Runtime is 30µs.
+
+# Day 11
+
+Somewhat game of life like problem with octopuses on a grid that can flash light and stimulate each other. Its enough to simulate exactly what the task requires - no tricks really needed.
+
+Using smallvec the runtime is 440µs.
