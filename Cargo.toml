@@ -13,6 +13,7 @@ itertools = "0.10"
 regex="1"
 parking_lot = "0.11"
 cached = { git="https://github.com/tumdum/cached.git", rev="9aaa3bcaca90ac0f6277e9f53c1b79637975aacb" }
+once_cell = "1"
 
 [profile.release]
 debug=true
@@ -20,7 +21,9 @@ lto="fat"
 codegen-units=1
 
 [dev-dependencies]
+proptest = "1.0.0"
 criterion = "0.3"
+rand = "0.8"
 
 [[bench]]
 name = "benchmarks"
