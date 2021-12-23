@@ -1,94 +1,199 @@
 use rustc_hash::{FxHashMap, FxHashSet};
-use std::collections::BTreeMap;
+use smallvec::SmallVec;
+use std::cmp::Reverse;
+use std::collections::{BTreeMap, BinaryHeap};
 use std::io::BufRead;
 use std::time::{Duration, Instant};
-use std::cmp::Reverse;
-use std::collections::BinaryHeap;
+
+const SMALL_MAP: [(usize, usize); 19] = [
+    (0, 1),
+    (1, 1),
+    (2, 1),
+    (3, 1),
+    (4, 1),
+    (5, 1),
+    (6, 1),
+    (7, 1),
+    (8, 1),
+    (9, 1),
+    (10, 1),
+    (2, 3),
+    (2, 2),
+    (4, 3),
+    (4, 2),
+    (6, 3),
+    (6, 2),
+    (8, 3),
+    (8, 2),
+];
+
+const MAP: [(usize, usize); 27] = [
+    (0, 1),
+    (1, 1),
+    (2, 1),
+    (3, 1),
+    (4, 1),
+    (5, 1),
+    (6, 1),
+    (7, 1),
+    (8, 1),
+    (9, 1),
+    (10, 1),
+    (2, 5),
+    (2, 4),
+    (2, 3),
+    (2, 2),
+    (4, 5),
+    (4, 4),
+    (4, 3),
+    (4, 2),
+    (6, 5),
+    (6, 4),
+    (6, 3),
+    (6, 2),
+    (8, 5),
+    (8, 4),
+    (8, 3),
+    (8, 2),
+];
+
+type Map<T> = [[T; 12]; 9];
+
+#[derive(Default, Debug, Clone, PartialOrd, Ord, PartialEq, Eq, Hash)]
+struct State {
+    map: Map<u8>,
+}
+
+impl State {
+    fn is_invalid(&self, p: &P) -> bool {
+        p.0 < 0 || p.1 < 0 || p.0 >= 12 || p.1 >= 9
+    }
+
+    fn contains_key(&self, p: &P) -> bool {
+        if self.is_invalid(p) {
+            return false;
+        }
+        self.map[p.1 as usize][p.0 as usize] != b'x'
+    }
+    fn get(&self, p: &P) -> Option<char> {
+        if self.is_invalid(p) {
+            return None;
+        }
+        if self.map[p.1 as usize][p.0 as usize] != b'x' {
+            Some(self.map[p.1 as usize][p.0 as usize] as char)
+        } else {
+            None
+        }
+    }
+    fn remove(&mut self, p: &P) -> Option<char> {
+        if self.is_invalid(p) {
+            return None;
+        }
+        let old = self.map[p.1 as usize][p.0 as usize];
+        self.map[p.1 as usize][p.0 as usize] = b'x';
+        if old != b'x' {
+            Some(old as char)
+        } else {
+            None
+        }
+    }
+    fn insert(&mut self, p: P, c: char) {
+        self.map[p.1 as usize][p.0 as usize] = c as u8;
+    }
+    fn iter<'a>(
+        &'a self,
+        whole_map: &'static [(usize, usize)],
+    ) -> impl Iterator<Item = (P, char)> + 'a {
+        whole_map.iter().flat_map(|(x, y)| {
+            if self.map[*y][*x] != b'x' {
+                Some(((*x as i8, *y as i8), self.map[*y][*x] as char))
+            } else {
+                None
+            }
+        })
+    }
+    fn new(other: &BTreeMap<P, char>) -> Self {
+        let mut map = [[b'x'; 12]; 9];
+        for ((x, y), c) in other {
+            map[*y as usize][*x as usize] = *c as u8;
+        }
+        Self { map }
+    }
+    fn new_hash(other: &FxHashSet<P>) -> Self {
+        let mut map = [[b'x'; 12]; 9];
+        for (x, y) in other {
+            map[*y as usize][*x as usize] = b'A';
+        }
+        Self { map }
+    }
+}
 
 type P = (i8, i8);
 
-fn around((x, y): (i8, i8)) -> [P; 4] {
-    [(x - 1, y), (x + 1, y), (x, y - 1), (x, y + 1)]
+fn around((x, y): (i8, i8), out: &mut [P; 4]) {
+    out[0] = (x - 1, y);
+    out[1] = (x + 1, y);
+    out[2] = (x, y - 1);
+    out[3] = (x, y + 1);
 }
 
 fn in_front_of_room(p: P) -> bool {
     p == (2, 1) || p == (4, 1) || p == (6, 1) || p == (8, 1)
 }
 
-fn can_move_to(pos: P, map: &FxHashSet<P>, others: &BTreeMap<P, char>) -> Vec<P> {
-    around(pos)
-        .into_iter()
-        .filter(|c| !others.contains_key(&c) && map.contains(&c))
-        .collect()
-}
-
 fn is_room(p: P) -> bool {
-    let rooms = [
-        (2, 2),
-        (2, 3),
-        (2, 4),
-        (2, 5),
-        (4, 2),
-        (4, 3),
-        (4, 4),
-        (4, 5),
-        (6, 2),
-        (6, 3),
-        (6, 4),
-        (6, 5),
-        (8, 2),
-        (8, 3),
-        (8, 4),
-        (8, 5),
-    ];
-    rooms.contains(&p)
+    (p.0 == 2 || p.0 == 4 || p.0 == 6 || p.0 == 8) && p.1 > 1
 }
 
 fn is_target_room(p: P, c: char) -> bool {
     if c == 'A' {
-        return p == (2, 3) || p == (2, 2) || p == (2,4) || p == (2,5)
+        return p.0 == 2;
     }
 
     if c == 'B' {
-        return p == (4, 3) || p == (4, 2) || p == (4,4) || p == (4,5)
+        return p.0 == 4;
     }
 
     if c == 'C' {
-        return p == (6, 3) || p == (6, 2)  || p == (6, 4) || p == (6,5)
+        return p.0 == 6;
     }
 
     if c == 'D' {
-        return p == (8, 3) || p == (8, 2) || p == (8,4) || p == (8,5)
+        return p.0 == 8;
     }
     panic!("unknown letter");
 }
 
-fn reachable_from(start: P, map: &FxHashSet<P>, state: &BTreeMap<P, char>) -> Vec<(P,u64)> {
-    let mut seen: FxHashSet<P> = FxHashSet::default();
-    let mut ret: FxHashSet<(P,u64)> = FxHashSet::default();
-    let mut todo: FxHashSet<(P,u64)> = FxHashSet::default();
-    todo.insert((start,0));
+type V = SmallVec<[(P, u64); 12]>;
 
-    while !todo.is_empty() {
-        let e = *todo.iter().next().unwrap();
-        todo.remove(&e);
-        let (next, dist) = e;
-        seen.insert(next);
+fn reachable_from(start: P, map: &State, state: &State, bottom: i8) -> V {
+    let mut seen: Map<bool> = Map::default();
+    let mut ret = V::new();
+    let mut todo = V::new();
+    todo.push((start, 0));
+
+    let mut tmp = [(0, 0); 4];
+
+    while let Some((next, dist)) = todo.pop() {
         if next != start {
-            ret.insert((next, dist));
+            ret.push((next, dist));
         }
-        for c in can_move_to(next, map, state) {
-            if !seen.contains(&c) {
-                todo.insert((c,dist+1));
+        around(next, &mut tmp);
+        for c in tmp
+            .iter()
+            .filter(|c| !state.contains_key(c) && map.contains_key(c))
+        {
+            if !seen[c.1 as usize][c.0 as usize] {
+                todo.push((*c, dist + 1));
+                seen[c.1 as usize][c.0 as usize] = true;
             }
         }
     }
-    // println!("ret: {:?}", ret);
 
-    let color: char = *state.get(&start).unwrap();
+    let color: char = state.get(&start).unwrap();
     let start_in_room = is_room(start);
-    let mut real_ret = vec![];
-    for (end,dist) in ret {
+    let mut real_ret = V::new();
+    for (end, dist) in ret {
         if in_front_of_room(end) {
             continue;
         }
@@ -100,47 +205,86 @@ fn reachable_from(start: P, map: &FxHashSet<P>, state: &BTreeMap<P, char>) -> Ve
         }
         if !start_in_room && end_in_room && end_is_target {
             let room = end.0;
-            if [2,3,4,5].into_iter().flat_map(|y| state.get(&(room, y))).all(|c| *c == color) {
-                real_ret.push((end, dist));
-                continue;
-            }
-        }
-    }
-
-    real_ret.sort();
-    real_ret
-}
-
-fn print(m: &FxHashSet<P>, others: &BTreeMap<P, char>) {
-    for y in 1..=5 {
-        for x in 0..=10 {
-            if m.contains(&(x, y)) {
-                if let Some(c) = others.get(&(x, y)) {
-                    print!("{}", c);
-                } else {
-                    print!(".");
+            if (2..=bottom)
+                .into_iter()
+                .flat_map(|y| state.get(&(room, y)))
+                .all(|c| c == color)
+            {
+                // once we enter the room, we go as far as possible
+                let mut use_it = true;
+                for y in end.1 + 1..=bottom {
+                    if state.get(&(end.0, y)) == None {
+                        use_it = false;
+                        break;
+                    }
                 }
-            } else {
-                print!(" ");
+                if use_it {
+                    real_ret.push((end, dist));
+                    continue;
+                }
             }
         }
-        println!();
     }
+
+    real_ret
 }
 
 fn move_cost(dist: u64, color: char) -> u64 {
     match color {
         'A' => dist,
-        'B' => 10*dist,
-        'C' => 100*dist,
-        'D' => 1000*dist,
-        _ => panic!("unknown color")
+        'B' => 10 * dist,
+        'C' => 100 * dist,
+        'D' => 1000 * dist,
+        _ => panic!("unknown color"),
     }
 }
 
-pub fn solve(input: &mut dyn BufRead, verify_expected: bool, output: bool) -> Duration {
-    // let input: Vec<i64> = input.lines().map(|s| s.unwrap().parse().unwrap()).collect();
+fn find_path(
+    start: &State,
+    end: &State,
+    map: &FxHashSet<P>,
+    whole_map: &'static [(usize, usize)],
+    bottom: i8,
+) -> u64 {
+    let map = State::new_hash(&map);
+    let mut todo: BinaryHeap<(Reverse<u64>, State)> = BinaryHeap::new();
+    let mut seen = FxHashMap::default();
+    todo.push((Reverse(0), start.clone()));
+    seen.insert(start.clone(), 0);
 
+    let mut part2 = 0;
+    while let Some((Reverse(cost), state)) = todo.pop() {
+        if &state == end {
+            part2 = cost;
+            break;
+        }
+        for (pos, _) in state.iter(whole_map) {
+            for (target, dist) in reachable_from(pos, &map, &state, bottom) {
+                let mut new_state = state.clone();
+                let c = new_state.remove(&pos).unwrap();
+                new_state.insert(target, c);
+                let new_cost = cost + move_cost(dist, c);
+                use std::collections::hash_map::Entry::*;
+                match seen.entry(new_state.clone()) {
+                    Occupied(mut e) => {
+                        if *e.get() > new_cost {
+                            e.insert(new_cost);
+                            todo.push((Reverse(new_cost), new_state));
+                        }
+                    }
+                    Vacant(e) => {
+                        e.insert(new_cost);
+                        todo.push((Reverse(new_cost), new_state));
+                    }
+                }
+            }
+        }
+    }
+
+    part2
+}
+
+pub fn solve(_input: &mut dyn BufRead, verify_expected: bool, output: bool) -> Duration {
     let s = Instant::now();
 
     /*
@@ -164,145 +308,135 @@ pub fn solve(input: &mut dyn BufRead, verify_expected: bool, output: bool) -> Du
         (8, 1),
         (9, 1),
         (10, 1),
-        // /*
-        (2, 5),
-        (2, 4),
-        // */
         (2, 3),
         (2, 2),
-        // /*
-        (4, 5),
-        (4, 4),
-        // */
         (4, 3),
         (4, 2),
-        // /*
-        (6, 5),
-        (6, 4),
-        // */
         (6, 3),
         (6, 2),
-        // /*
-        (8, 5),
-        (8, 4),
-        // */
         (8, 3),
         (8, 2),
     ]
     .into_iter()
     .collect();
 
-    let others: BTreeMap<P, char> = [
+    let start: BTreeMap<P, char> = [
         ((2, 2), 'D'),
+        ((2, 3), 'B'),
+        ((4, 2), 'C'),
+        ((4, 3), 'C'),
+        ((6, 2), 'A'),
+        ((6, 3), 'D'),
+        ((8, 2), 'B'),
+        ((8, 3), 'A'),
+    ]
+    .into_iter()
+    .collect();
 
+    let end: BTreeMap<P, char> = [
+        ((2, 2), 'A'),
+        ((2, 3), 'A'),
+        ((4, 2), 'B'),
+        ((4, 3), 'B'),
+        ((6, 2), 'C'),
+        ((6, 3), 'C'),
+        ((8, 2), 'D'),
+        ((8, 3), 'D'),
+    ]
+    .into_iter()
+    .collect();
+
+    let start = State::new(&start);
+    let end = State::new(&end);
+
+    let part1 = find_path(&start, &end, &map, &SMALL_MAP, 3);
+
+    let map: FxHashSet<P> = [
+        (0, 1),
+        (1, 1),
+        (2, 1),
+        (3, 1),
+        (4, 1),
+        (5, 1),
+        (6, 1),
+        (7, 1),
+        (8, 1),
+        (9, 1),
+        (10, 1),
+        (2, 5),
+        (2, 4),
+        (2, 3),
+        (2, 2),
+        (4, 5),
+        (4, 4),
+        (4, 3),
+        (4, 2),
+        (6, 5),
+        (6, 4),
+        (6, 3),
+        (6, 2),
+        (8, 5),
+        (8, 4),
+        (8, 3),
+        (8, 2),
+    ]
+    .into_iter()
+    .collect();
+
+    let start: BTreeMap<P, char> = [
+        ((2, 2), 'D'),
         ((2, 3), 'D'),
         ((2, 4), 'D'),
-
         ((2, 5), 'B'),
         ((4, 2), 'C'),
-        
         ((4, 3), 'C'),
         ((4, 4), 'B'),
-
         ((4, 5), 'C'),
         ((6, 5), 'D'),
-
         ((6, 3), 'B'),
         ((6, 4), 'A'),
-
         ((6, 2), 'A'),
         ((8, 2), 'B'),
-
         ((8, 3), 'A'),
         ((8, 4), 'C'),
-
         ((8, 5), 'A'),
     ]
     .into_iter()
     .collect();
-    
 
     let end: BTreeMap<P, char> = [
         ((2, 2), 'A'),
-        // ((2, 3), 'A'),
-        // /*
         ((2, 3), 'A'),
         ((2, 4), 'A'),
         ((2, 5), 'A'),
-        // */
         ((4, 2), 'B'),
-        // ((4, 3), 'B'),
-        // /*
         ((4, 3), 'B'),
         ((4, 4), 'B'),
         ((4, 5), 'B'),
-        // */
         ((6, 2), 'C'),
-        // ((6, 3), 'C'),
-        // /*
         ((6, 3), 'C'),
         ((6, 4), 'C'),
         ((6, 5), 'C'),
-        // */
         ((8, 2), 'D'),
-        // ((8, 3), 'D'),
-        // /*
         ((8, 3), 'D'),
         ((8, 4), 'D'),
         ((8, 5), 'D'),
-        // */
     ]
     .into_iter()
     .collect();
 
+    let start = State::new(&start);
+    let end = State::new(&end);
 
-    print(&map, &others);
-    println!("end:");
-    print(&map, &end);
+    let part2 = find_path(&start, &end, &map, &MAP, 5);
 
-
-    let mut todo: BinaryHeap<(Reverse<u64>, BTreeMap<P, char>)> = BinaryHeap::new();
-    let mut seen = FxHashMap::default();
-    todo.push((Reverse(0), others.clone()));
-    seen.insert(others, 0);
-
-    let mut part2 = 0;
-    let mut c = 0;
-    while let Some((Reverse(cost), state)) = todo.pop() {
-        c += 1;
-        if c % 100000 == 0 {
-            println!("todo: {}, current cost: {}", todo.len(), cost);
-        }
-        if state == end {
-            part2 = cost;
-            break;
-        }
-        for (pos, _) in &state {
-            for (target, dist) in reachable_from(*pos, &map, &state) {
-                let mut new_state = state.clone();
-                let c = new_state.remove(&pos).unwrap();
-                new_state.insert(target, c);
-                let new_cost = cost + move_cost(dist, c);
-                if !seen.contains_key(&new_state) {
-                    seen.insert(new_state.clone(), new_cost);
-                    todo.push((Reverse(new_cost), new_state));
-                } else {
-                    let old_cost = seen.get(&new_state).unwrap();
-                    if *old_cost > new_cost {
-                        seen.insert(new_state.clone(), new_cost);
-                        todo.push((Reverse(new_cost), new_state));
-                    }
-                }
-            }
-        }
-    }
     let e = s.elapsed();
     if verify_expected {
-        // assert_eq!(1602, part1);
+        assert_eq!(15160, part1);
         assert_eq!(46772, part2);
     }
     if output {
-        // println!("\t{}", part1);
+        println!("\t{}", part1);
         println!("\t{}", part2);
     }
     e
@@ -314,7 +448,7 @@ mod tests {
 
     #[test]
     fn move_cost_tests() {
-        // assert_eq!(40, move_cost((6,2),(3,1),'B'));
+        let mut s = State::default();
+        s.insert((0, 1), 'A');
     }
-
 }
