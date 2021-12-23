@@ -5,7 +5,7 @@ use std::collections::{BTreeMap, BinaryHeap};
 use std::io::BufRead;
 use std::time::{Duration, Instant};
 
-const SMALL_MAP: [(usize, usize); 19] = [
+const SMALL_MAP: [(u8, u8); 19] = [
     (0, 1),
     (1, 1),
     (2, 1),
@@ -27,7 +27,7 @@ const SMALL_MAP: [(usize, usize); 19] = [
     (8, 2),
 ];
 
-const MAP: [(usize, usize); 27] = [
+const MAP: [(u8, u8); 27] = [
     (0, 1),
     (1, 1),
     (2, 1),
@@ -57,7 +57,7 @@ const MAP: [(usize, usize); 27] = [
     (8, 2),
 ];
 
-type Map<T> = [[T; 12]; 9];
+type Map<T> = [[T; 12]; 7];
 
 #[derive(Default, Debug, Clone, PartialOrd, Ord, PartialEq, Eq, Hash)]
 struct State {
@@ -66,7 +66,7 @@ struct State {
 
 impl State {
     fn is_invalid(&self, p: &P) -> bool {
-        p.0 < 0 || p.1 < 0 || p.0 >= 12 || p.1 >= 9
+        p.0 < 0 || p.1 < 0
     }
 
     fn contains_key(&self, p: &P) -> bool {
@@ -75,10 +75,8 @@ impl State {
         }
         self.map[p.1 as usize][p.0 as usize] != b'x'
     }
+
     fn get(&self, p: &P) -> Option<char> {
-        if self.is_invalid(p) {
-            return None;
-        }
         if self.map[p.1 as usize][p.0 as usize] != b'x' {
             Some(self.map[p.1 as usize][p.0 as usize] as char)
         } else {
@@ -86,9 +84,6 @@ impl State {
         }
     }
     fn remove(&mut self, p: &P) -> Option<char> {
-        if self.is_invalid(p) {
-            return None;
-        }
         let old = self.map[p.1 as usize][p.0 as usize];
         self.map[p.1 as usize][p.0 as usize] = b'x';
         if old != b'x' {
@@ -100,27 +95,27 @@ impl State {
     fn insert(&mut self, p: P, c: char) {
         self.map[p.1 as usize][p.0 as usize] = c as u8;
     }
-    fn iter<'a>(
-        &'a self,
-        whole_map: &'static [(usize, usize)],
-    ) -> impl Iterator<Item = (P, char)> + 'a {
+    fn iter<'a>(&'a self, whole_map: &'static [(u8, u8)]) -> impl Iterator<Item = (P, char)> + 'a {
         whole_map.iter().flat_map(|(x, y)| {
-            if self.map[*y][*x] != b'x' {
-                Some(((*x as i8, *y as i8), self.map[*y][*x] as char))
+            if self.map[*y as usize][*x as usize] != b'x' {
+                Some((
+                    (*x as i8, *y as i8),
+                    self.map[*y as usize][*x as usize] as char,
+                ))
             } else {
                 None
             }
         })
     }
     fn new(other: &BTreeMap<P, char>) -> Self {
-        let mut map = [[b'x'; 12]; 9];
+        let mut map = [[b'x'; 12]; 7];
         for ((x, y), c) in other {
             map[*y as usize][*x as usize] = *c as u8;
         }
         Self { map }
     }
     fn new_hash(other: &FxHashSet<P>) -> Self {
-        let mut map = [[b'x'; 12]; 9];
+        let mut map = [[b'x'; 12]; 7];
         for (x, y) in other {
             map[*y as usize][*x as usize] = b'A';
         }
@@ -138,7 +133,7 @@ fn around((x, y): (i8, i8), out: &mut [P; 4]) {
 }
 
 fn in_front_of_room(p: P) -> bool {
-    p == (2, 1) || p == (4, 1) || p == (6, 1) || p == (8, 1)
+    p.1 == 1 && (p.0 == 2 || p.0 == 4 || p.0 == 6 || p.0 == 8)
 }
 
 fn is_room(p: P) -> bool {
@@ -164,7 +159,7 @@ fn is_target_room(p: P, c: char) -> bool {
     panic!("unknown letter");
 }
 
-type V = SmallVec<[(P, u64); 12]>;
+type V = SmallVec<[(P, u32); 12]>;
 
 fn reachable_from(start: P, map: &State, state: &State, bottom: i8) -> V {
     let mut seen: Map<bool> = Map::default();
@@ -179,13 +174,12 @@ fn reachable_from(start: P, map: &State, state: &State, bottom: i8) -> V {
             ret.push((next, dist));
         }
         around(next, &mut tmp);
-        for c in tmp
-            .iter()
-            .filter(|c| !state.contains_key(c) && map.contains_key(c))
-        {
-            if !seen[c.1 as usize][c.0 as usize] {
-                todo.push((*c, dist + 1));
-                seen[c.1 as usize][c.0 as usize] = true;
+        for c in &tmp {
+            if !state.contains_key(c) && map.contains_key(c) {
+                if !seen[c.1 as usize][c.0 as usize] {
+                    todo.push((*c, dist + 1));
+                    seen[c.1 as usize][c.0 as usize] = true;
+                }
             }
         }
     }
@@ -229,7 +223,7 @@ fn reachable_from(start: P, map: &State, state: &State, bottom: i8) -> V {
     real_ret
 }
 
-fn move_cost(dist: u64, color: char) -> u64 {
+fn move_cost(dist: u32, color: char) -> u32 {
     match color {
         'A' => dist,
         'B' => 10 * dist,
@@ -243,11 +237,11 @@ fn find_path(
     start: &State,
     end: &State,
     map: &FxHashSet<P>,
-    whole_map: &'static [(usize, usize)],
+    whole_map: &'static [(u8, u8)],
     bottom: i8,
-) -> u64 {
+) -> u32 {
     let map = State::new_hash(&map);
-    let mut todo: BinaryHeap<(Reverse<u64>, State)> = BinaryHeap::new();
+    let mut todo: BinaryHeap<(Reverse<u32>, State)> = BinaryHeap::new();
     let mut seen = FxHashMap::default();
     todo.push((Reverse(0), start.clone()));
     seen.insert(start.clone(), 0);
