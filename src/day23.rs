@@ -252,11 +252,9 @@ fn find_path(
     todo.push((Reverse(0), start.clone()));
     seen.insert(start.clone(), 0);
 
-    let mut part2 = 0;
     while let Some((Reverse(cost), state)) = todo.pop() {
         if &state == end {
-            part2 = cost;
-            break;
+            return cost;
         }
         for (pos, _) in state.iter(whole_map) {
             for (target, dist) in reachable_from(pos, &map, &state, bottom) {
@@ -281,7 +279,7 @@ fn find_path(
         }
     }
 
-    part2
+    unreachable!()
 }
 
 pub fn solve(_input: &mut dyn BufRead, verify_expected: bool, output: bool) -> Duration {
