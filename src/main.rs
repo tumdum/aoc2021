@@ -65,6 +65,7 @@ fn main() {
         &aoc21::day22::solve,
         &aoc21::day23::solve,
         &aoc21::day24::solve,
+        &aoc21::day25::solve,
     ];
 
     for (i, solution) in solutions.iter().enumerate() {
