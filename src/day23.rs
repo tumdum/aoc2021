@@ -65,25 +65,25 @@ struct State {
 }
 
 impl State {
-    fn is_invalid(&self, p: &P) -> bool {
+    fn is_invalid(&self, p: P) -> bool {
         p.0 < 0 || p.1 < 0
     }
 
-    fn contains_key(&self, p: &P) -> bool {
+    fn contains_key(&self, p: P) -> bool {
         if self.is_invalid(p) {
             return false;
         }
         self.map[p.1 as usize][p.0 as usize] != b'x'
     }
 
-    fn get(&self, p: &P) -> Option<char> {
+    fn get(&self, p: P) -> Option<char> {
         if self.map[p.1 as usize][p.0 as usize] != b'x' {
             Some(self.map[p.1 as usize][p.0 as usize] as char)
         } else {
             None
         }
     }
-    fn remove(&mut self, p: &P) -> Option<char> {
+    fn remove(&mut self, p: P) -> Option<char> {
         let old = self.map[p.1 as usize][p.0 as usize];
         self.map[p.1 as usize][p.0 as usize] = b'x';
         if old != b'x' {
@@ -171,11 +171,13 @@ fn reachable_from(start: P, map: &State, state: &State, bottom: i8) -> V {
 
     while let Some((next, dist)) = todo.pop() {
         if next != start {
-            ret.push((next, dist));
+            if !in_front_of_room(next) {
+                ret.push((next, dist));
+            }
         }
         around(next, &mut tmp);
         for c in &tmp {
-            if !state.contains_key(c) && map.contains_key(c) {
+            if !state.contains_key(*c) && map.contains_key(*c) {
                 if !seen[c.1 as usize][c.0 as usize] {
                     todo.push((*c, dist + 1));
                     seen[c.1 as usize][c.0 as usize] = true;
@@ -184,13 +186,10 @@ fn reachable_from(start: P, map: &State, state: &State, bottom: i8) -> V {
         }
     }
 
-    let color: char = state.get(&start).unwrap();
+    let color: char = state.get(start).unwrap();
     let start_in_room = is_room(start);
     let mut real_ret = V::new();
     for (end, dist) in ret {
-        if in_front_of_room(end) {
-            continue;
-        }
         let end_in_room = is_room(end);
         let end_is_target = is_target_room(end, color);
         if start_in_room && !end_in_room {
@@ -201,13 +200,13 @@ fn reachable_from(start: P, map: &State, state: &State, bottom: i8) -> V {
             let room = end.0;
             if (2..=bottom)
                 .into_iter()
-                .flat_map(|y| state.get(&(room, y)))
+                .flat_map(|y| state.get((room, y)))
                 .all(|c| c == color)
             {
                 // once we enter the room, we go as far as possible
                 let mut use_it = true;
                 for y in end.1 + 1..=bottom {
-                    if state.get(&(end.0, y)) == None {
+                    if state.get((end.0, y)) == None {
                         use_it = false;
                         break;
                     }
@@ -253,7 +252,7 @@ fn find_path(
         for (pos, _) in state.iter(whole_map) {
             for (target, dist) in reachable_from(pos, &map, &state, bottom) {
                 let mut new_state = state.clone();
-                let c = new_state.remove(&pos).unwrap();
+                let c = new_state.remove(pos).unwrap();
                 new_state.insert(target, c);
                 let new_cost = cost + move_cost(dist, c);
                 use std::collections::hash_map::Entry::*;

@@ -6,14 +6,10 @@ type M = [[u8;139]; 137];
 fn canonaical(m: &M, (mut x, mut y): (i32,i32)) -> (i32,i32) {
     let h = m.len() as i32;
     let w = m[0].len() as i32;
-    if x < 0 {
-        x += w;
-    } else if x >= w {
+    if x >= w {
         x -= w;
     }
-    if y < 0 {
-        y += h;
-    } else if y >= h {
+    if y >= h {
         y -= h;
     }
     (x,y)
