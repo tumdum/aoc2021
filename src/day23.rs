@@ -4,6 +4,7 @@ use std::cmp::Reverse;
 use std::collections::{BTreeMap, BinaryHeap};
 use std::io::BufRead;
 use std::time::{Duration, Instant};
+use std::hash::{Hasher,Hash};
 
 const SMALL_MAP: [(u8, u8); 19] = [
     (0, 1),
@@ -57,11 +58,26 @@ const MAP: [(u8, u8); 27] = [
     (8, 2),
 ];
 
-type Map<T> = [[T; 12]; 7];
+const ROWS: usize = 7;
+const COLS: usize = 12;
 
-#[derive(Default, Debug, Clone, PartialOrd, Ord, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialOrd, Ord, PartialEq, Eq)]
 struct State {
-    map: Map<u8>,
+    map: [u8; ROWS * COLS],
+}
+
+impl Default for State {
+    fn default() -> Self {
+        Self {
+            map: [0; ROWS * COLS],
+        }
+    }
+}
+
+impl Hash for State {
+    fn hash<H>(&self, hasher: &mut H) where H: Hasher {
+        hasher.write(&self.map);
+    }
 }
 
 impl State {
@@ -73,51 +89,55 @@ impl State {
         if self.is_invalid(p) {
             return false;
         }
-        self.map[p.1 as usize][p.0 as usize] != b'x'
+        self.map[p.1 as usize * COLS + p.0 as usize] != b'x'
     }
 
     fn get(&self, p: P) -> Option<char> {
-        if self.map[p.1 as usize][p.0 as usize] != b'x' {
-            Some(self.map[p.1 as usize][p.0 as usize] as char)
+        if self.map[p.1 as usize * COLS + p.0 as usize] != b'x' {
+            Some(self.map[p.1 as usize * COLS + p.0 as usize] as char)
         } else {
             None
         }
     }
     fn remove(&mut self, p: P) -> Option<char> {
-        let old = self.map[p.1 as usize][p.0 as usize];
-        self.map[p.1 as usize][p.0 as usize] = b'x';
+        let old = self.map[p.1 as usize * COLS + p.0 as usize];
+        self.map[p.1 as usize * COLS + p.0 as usize] = b'x';
         if old != b'x' {
             Some(old as char)
         } else {
             None
         }
     }
+
     fn insert(&mut self, p: P, c: char) {
-        self.map[p.1 as usize][p.0 as usize] = c as u8;
+        self.map[p.1 as usize * COLS + p.0 as usize] = c as u8;
     }
+
     fn iter<'a>(&'a self, whole_map: &'static [(u8, u8)]) -> impl Iterator<Item = (P, char)> + 'a {
         whole_map.iter().flat_map(|(x, y)| {
-            if self.map[*y as usize][*x as usize] != b'x' {
+            if self.map[*y as usize * COLS + *x as usize] != b'x' {
                 Some((
                     (*x as i8, *y as i8),
-                    self.map[*y as usize][*x as usize] as char,
+                    self.map[*y as usize * COLS + *x as usize] as char,
                 ))
             } else {
                 None
             }
         })
     }
+
     fn new(other: &BTreeMap<P, char>) -> Self {
-        let mut map = [[b'x'; 12]; 7];
+        let mut map = [b'x'; COLS * 7];
         for ((x, y), c) in other {
-            map[*y as usize][*x as usize] = *c as u8;
+            map[*y as usize * COLS + *x as usize] = *c as u8;
         }
         Self { map }
     }
+
     fn new_hash(other: &FxHashSet<P>) -> Self {
-        let mut map = [[b'x'; 12]; 7];
+        let mut map = [b'x'; COLS * 7];
         for (x, y) in other {
-            map[*y as usize][*x as usize] = b'A';
+            map[*y as usize * COLS + *x as usize] = b'A';
         }
         Self { map }
     }
@@ -162,7 +182,7 @@ fn is_target_room(p: P, c: char) -> bool {
 type V = SmallVec<[(P, u32); 12]>;
 
 fn reachable_from(start: P, map: &State, state: &State, bottom: i8) -> V {
-    let mut seen: Map<bool> = Map::default();
+    let mut seen = [false; ROWS * COLS];
     let mut ret = V::new();
     let mut todo = V::new();
     todo.push((start, 0));
@@ -178,9 +198,9 @@ fn reachable_from(start: P, map: &State, state: &State, bottom: i8) -> V {
         around(next, &mut tmp);
         for c in &tmp {
             if !state.contains_key(*c) && map.contains_key(*c) {
-                if !seen[c.1 as usize][c.0 as usize] {
+                if !seen[c.1 as usize * COLS + c.0 as usize] {
                     todo.push((*c, dist + 1));
-                    seen[c.1 as usize][c.0 as usize] = true;
+                    seen[c.1 as usize * COLS + c.0 as usize] = true;
                 }
             }
         }
